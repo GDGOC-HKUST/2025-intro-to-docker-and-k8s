@@ -1,29 +1,48 @@
-version: '3.8'  # Specify Docker Compose version
+name: docker-k8s-part2
 
 services:
-  backend:          # First service: Go web application
+  frontend:
+    build: frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+    environment:
+      - VITE_API_URL=backend:8080
+
+  backend: # First service: Go web application
     build: backend
     ports:
-      - "8080:8080"  # Map host port 8080 to container port 8080
+      - "8080:8080" # Map host port 8080 to container port 8080
     depends_on:
-      - db    # Ensure database starts before app
+      - db # Ensure database starts before app
     environment:
-      - DB_HOST=db        # Database hostname (service name)
-      - DB_PORT=5432      # PostgreSQL default port
-      - DB_USER=postgres  # Database username
-      - DB_PASSWORD=postgres  # Database password
-      - DB_NAME=postgres      # Database name
+      - DB_HOST=db # Database hostname (service name)
+      - DB_PORT=5432 # PostgreSQL default port
+      - DB_USER=postgres # Database username
+      - DB_PASSWORD=postgres # Database password
+      - DB_NAME=postgres # Database name
+    networks:
+      - app-network
 
-  db:          # Second service: PostgreSQL database
-    image: postgres:15  # Official PostgreSQL image
+  db: # Second service: PostgreSQL database
+    image: postgres:15 # Official PostgreSQL image
     environment:
-      - POSTGRES_USER=postgres        # DB username
-      - POSTGRES_PASSWORD=postgres  # DB password
-      - POSTGRES_DB=postgres             # DB name
+      - POSTGRES_USER=postgres # DB username
+      - POSTGRES_PASSWORD=postgres # DB password
+      - POSTGRES_DB=postgres # DB name
     volumes:
-      - db-data:/var/lib/postgresql/data  # Persistent storage
+      - db-data:/var/lib/postgresql/data # Persistent storage
     ports:
-      - "5432:5432"  # Optional: expose DB port to host
+      - "5432:5432" # Optional: expose DB port to host
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
 
 volumes:
-  db-data:  # Named volume for database persistence
+  db-data: # Named volume for database persistence

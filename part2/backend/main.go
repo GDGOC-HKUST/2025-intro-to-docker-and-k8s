@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -12,13 +13,34 @@ import (
 	"gorm.io/gorm"
 )
 
+type BaseModel struct {
+	ID        uint           `gorm:"primaryKey" json:"id"`
+	CreatedAt time.Time      `json:"createdAt"`
+	UpdatedAt time.Time      `json:"updatedAt"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deletedAt"`
+}
+
 type Todo struct {
-	gorm.Model
+	BaseModel
 	Title     string `json:"title"`
 	Completed bool   `json:"completed"`
 }
 
 var db *gorm.DB
+
+func connectDB(dsn string, maxRetries int) (*gorm.DB, error) {
+	var err error
+	for i := 0; i < maxRetries; i++ {
+		db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+		if err == nil {
+			log.Printf("Successfully connected to database")
+			return db, nil
+		}
+		log.Printf("Failed to connect to database (attempt %d/%d): %v", i+1, maxRetries, err)
+		time.Sleep(5 * time.Second) // Wait 5 seconds before retrying
+	}
+	return nil, fmt.Errorf("failed to connect to database after %d attempts: %v", maxRetries, err)
+}
 
 func main() {
 	// Get database configuration from environment variables
@@ -31,8 +53,10 @@ func main() {
 	// Database connection string using environment variables
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
 		dbHost, dbUser, dbPassword, dbName, dbPort)
+
+	// Try to connect to database with retries
 	var err error
-	db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	db, err = connectDB(dsn, 10) // Try 10 times with 5-second intervals
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
 	}
@@ -48,8 +72,10 @@ func main() {
 	r := gin.Default()
 
 	// Configure CORS middleware
-	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{"http://localhost:5173"}
+  config := cors.DefaultConfig()
+	config.AllowAllOrigins = true
+	config.AllowMethods = []string{"GET", "POST", "DELETE", "OPTIONS", "PUT"}
+	config.AllowHeaders = []string{"Authorization", "Content-Type", "Upgrade", "Origin", "Connection", "Accept-Encoding", "Accept-Language", "Host", "Access-Control-Request-Method", "Access-Control-Request-Headers"}
 	r.Use(cors.New(config))
 
 	// Routes

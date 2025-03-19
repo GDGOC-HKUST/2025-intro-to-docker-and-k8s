@@ -67,7 +67,7 @@ export default function TodoForm() {
     if (!editingTodo) return;
     try {
       setLoading(true);
-      await TodoService.updateTodo(editingTodo.ID, {
+      await TodoService.updateTodo(editingTodo.id, {
         title: editingTodo.title,
         completed: editingTodo.completed,
       });
@@ -134,7 +134,7 @@ export default function TodoForm() {
       {/* Todo List */}
       <div className="space-y-4">
         {todos.map((todo) => (
-          <Card key={todo.ID}>
+          <Card key={todo.id}>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
@@ -202,7 +202,7 @@ export default function TodoForm() {
                   <Button
                     variant="destructive"
                     size="icon"
-                    onClick={() => handleDelete(todo.ID)}
+                    onClick={() => handleDelete(todo.id)}
                     disabled={loading}
                   >
                     <Trash2 className="h-4 w-4" />

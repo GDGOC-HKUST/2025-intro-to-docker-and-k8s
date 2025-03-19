@@ -1,14 +1,14 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:8080";
+const API_URL = import.meta.env.VITE_API_URL;
 
 export interface Todo {
   title: string;
   completed: boolean;
-  ID: number;
-  CreatedAt: string;
-  UpdatedAt: string;
-  DeletedAt: string;
+  id: number;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string;
 }
 
 export interface CreateTodoDto {
