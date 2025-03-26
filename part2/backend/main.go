@@ -72,7 +72,7 @@ func main() {
 	r := gin.Default()
 
 	// Configure CORS middleware
-  config := cors.DefaultConfig()
+	config := cors.DefaultConfig()
 	config.AllowAllOrigins = true
 	config.AllowMethods = []string{"GET", "POST", "DELETE", "OPTIONS", "PUT"}
 	config.AllowHeaders = []string{"Authorization", "Content-Type", "Upgrade", "Origin", "Connection", "Accept-Encoding", "Accept-Language", "Host", "Access-Control-Request-Method", "Access-Control-Request-Headers"}
