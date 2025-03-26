@@ -1,48 +1,62 @@
+# Docker Compose file for a three-tier web application
+# This defines how multiple containers work together as a single application
+
+# Name the project for better identification in Docker Desktop and when running docker commands
 name: docker-k8s-part2
 
+# Define the services (containers) that make up the application
 services:
+  # Frontend service - Web UI built with a JavaScript framework
   frontend:
-    build: frontend
+    build: frontend # Build image using the Dockerfile in the ./frontend directory
     ports:
-      - "3000:3000"
+      - "3000:3000" # Map host port 3000 to container port 3000 (HOST:CONTAINER)
     depends_on:
-      - backend
+      - backend # Ensures backend starts before frontend
     networks:
-      - app-network
+      - app-network # Connect to the app-network for communication with other services
     environment:
-      - VITE_API_URL=backend:8080
+      - VITE_API_URL=backend:8080 # Environment variable for API URL (uses service name as hostname)
 
-  backend: # First service: Go web application
-    build: backend
+  # Backend service - API server built with Go
+  backend:
+    build: backend # Build image using the Dockerfile in the ./backend directory
     ports:
       - "8080:8080" # Map host port 8080 to container port 8080
     depends_on:
-      - db # Ensure database starts before app
+      - db # Ensures database starts before backend
     environment:
-      - DB_HOST=db # Database hostname (service name)
+      # Define environment variables for configuration
+      - DB_HOST=db # Connect to 'db' service by name (Docker's internal DNS)
       - DB_PORT=5432 # PostgreSQL default port
       - DB_USER=postgres # Database username
-      - DB_PASSWORD=postgres # Database password
+      - DB_PASSWORD=postgres # Database password (use secrets for production)
       - DB_NAME=postgres # Database name
     networks:
-      - app-network
+      - app-network # Connect to the app-network
 
-  db: # Second service: PostgreSQL database
-    image: postgres:15 # Official PostgreSQL image
+  # Database service - PostgreSQL for data persistence
+  db:
+    image: postgres:15 # Use the official PostgreSQL 15 image from Docker Hub
     environment:
-      - POSTGRES_USER=postgres # DB username
-      - POSTGRES_PASSWORD=postgres # DB password
-      - POSTGRES_DB=postgres # DB name
+      # Configure the database using environment variables
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
     volumes:
-      - db-data:/var/lib/postgresql/data # Persistent storage
+      - db-data:/var/lib/postgresql/data # Use named volume for data persistence
     ports:
-      - "5432:5432" # Optional: expose DB port to host
+      - "5432:5432" # Expose PostgreSQL port to host (optional for local development)
     networks:
-      - app-network
+      - app-network # Connect to the app-network
 
+# Define custom networks - allows containers to communicate with each other
 networks:
   app-network:
-    driver: bridge
+    driver: bridge # Use bridge network type (default, good for local development)
 
+# Define named volumes - persists data beyond the lifecycle of containers
 volumes:
-  db-data: # Named volume for database persistence
+  db-data:
+    # Named volume for database data persistence
+    # When containers are removed, this data remains
