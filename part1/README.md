@@ -1,4 +1,6 @@
-# Part 1
+# Part 1: Deploying an Application using Docker
+
+In this part, we will cover the basics of Docker, including its installation, creating a simple web server, writing a Dockerfile, building a Docker image, and running a Docker container.
 
 ## What's Docker?
 
