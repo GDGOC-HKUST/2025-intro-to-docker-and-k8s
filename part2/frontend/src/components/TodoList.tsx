@@ -1,12 +1,11 @@
-// components/TodoForm.tsx
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import TodoService, { Todo, CreateTodoDto } from "../lib/api";
-import { Check, Pencil, Trash2, X } from "lucide-react";
+import CreateTodoForm from "./CreateTodoForm";
+import TodoItem from "./TodoItem";
+import TodoCounter from "./TodoCounter";
 
-export default function TodoForm() {
+export default function TodoList() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [newTodo, setNewTodo] = useState<CreateTodoDto>({
     title: "",
@@ -23,7 +22,12 @@ export default function TodoForm() {
     try {
       setLoading(true);
       const todosData = await TodoService.getAllTodos();
-      setTodos(todosData);
+      // Sort todos by createdAt in descending order (newest first)
+      const sortedTodos = todosData.sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      setTodos(sortedTodos);
     } catch (error) {
       console.error("Failed to fetch todos:", error);
     } finally {
@@ -33,6 +37,8 @@ export default function TodoForm() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!newTodo.title.trim()) return;
+
     try {
       setLoading(true);
       await TodoService.createTodo(newTodo);
@@ -70,115 +76,51 @@ export default function TodoForm() {
     }
   };
 
-  const CustomCheckbox = ({
-    checked,
-    onChange,
-  }: {
-    checked: boolean;
-    onChange: (checked: boolean) => void;
-  }) => (
-    <button
-      onClick={() => onChange(!checked)}
-      className={`w-5 h-5 rounded-full flex items-center justify-center border-2 transition-all ${
-        checked
-          ? "bg-green-500 border-green-500"
-          : "border-gray-300 hover:border-gray-400"
-      }`}
-    >
-      {checked && <Check className="w-3 h-3 text-white" />}
-    </button>
-  );
-
   return (
-    <div className="max-w-2xl mx-auto p-4">
-      {/* Create Todo Form */}
-      <Card className="mb-6 shadow-sm">
-        <CardContent className="pt-6">
-          <form onSubmit={handleCreate} className="flex items-center gap-4">
-            <Input
-              value={newTodo.title}
-              onChange={(e) =>
-                setNewTodo({ ...newTodo, title: e.target.value })
-              }
-              placeholder="Add a new task..."
-              className="flex-1"
-              required
+    <div className="w-full max-w-7xl mx-auto flex flex-col md:flex-row gap-6 h-[80vh] p-4">
+      {/* Left Section - Add Todo Form */}
+      <div className="w-full md:w-2/5 md:sticky md:top-0 md:self-start">
+        <Card className="bg-white/95 rounded-xl shadow-md overflow-hidden border border-gray-100 h-full">
+          <CardContent className="">
+            <CreateTodoForm
+              newTodo={newTodo}
+              setNewTodo={setNewTodo}
+              onSubmit={handleCreate}
+              loading={loading}
             />
-            <Button
-              type="submit"
-              disabled={loading}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {loading ? "Adding..." : "Add"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
 
-      {/* Todo List */}
-      <div className="space-y-2">
-        {todos.map((todo) => (
-          <Card
-            key={todo.id}
-            className="shadow-sm hover:shadow-md transition-shadow border-0"
-          >
-            <CardContent className="p-4 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3 flex-1">
-                <CustomCheckbox
-                  checked={todo.completed}
-                  onChange={(checked) =>
-                    handleUpdate(todo.id, { completed: checked })
-                  }
-                />
-                {editingId === todo.id ? (
-                  <div className="flex-1 flex items-center gap-2">
-                    <Input
-                      value={todo.title}
-                      onBlur={(e) => {
-                        handleUpdate(todo.id, { title: e.target.value });
-                        setEditingId(null);
-                      }}
-                      autoFocus
-                      className="h-8"
-                    />
-                    <button
-                      onClick={() => setEditingId(null)}
-                      className="text-gray-500 hover:text-gray-700"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ) : (
-                  <span
-                    onClick={() => setEditingId(todo.id)}
-                    className={`flex-1 cursor-pointer ${
-                      todo.completed
-                        ? "line-through text-gray-400"
-                        : "text-gray-800 hover:text-gray-600"
-                    }`}
-                  >
-                    {todo.title}
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setEditingId(todo.id)}
-                  className="text-gray-500 hover:text-blue-600 p-1"
-                >
-                  <Pencil className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => handleDelete(todo.id)}
-                  disabled={loading}
-                  className="text-gray-500 hover:text-red-600 p-1"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+      {/* Right Section - Todo List */}
+      <div className="w-full md:w-3/5 flex flex-col h-full">
+        <Card className="bg-white/90 rounded-xl shadow-lg overflow-hidden h-full flex flex-col border-none outline-none">
+          <CardContent className="p-6 flex-grow overflow-y-auto max-h-[80vh]">
+            <div className="space-y-4">
+              <TodoCounter count={todos.length} />
+
+              {todos.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  No tasks yet. Add one to get started!
+                </div>
+              ) : (
+                todos.map((todo) => (
+                  <TodoItem
+                    key={todo.id}
+                    todo={todo}
+                    editingId={editingId}
+                    setEditingId={setEditingId}
+                    onUpdate={handleUpdate}
+                    onDelete={handleDelete}
+                    loading={loading}
+                    todos={todos}
+                    setTodos={setTodos}
+                  />
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

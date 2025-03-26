@@ -41,7 +41,6 @@ const TodoService = {
   },
 
   deleteTodo: async (id: number): Promise<void> => {
-    console.log(id);
     await axios.delete(`${API_URL}/todos/${id}`);
   },
 };
