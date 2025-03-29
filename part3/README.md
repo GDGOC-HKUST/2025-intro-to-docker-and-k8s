@@ -1,99 +1,84 @@
 # Part 3: Introduction to Kubernetes
 
-In this part, we'll learn how to deploy our containerized application to Kubernetes. We'll use [minikube](https://github.com/kubernetes/minikube) as our local Kubernetes cluster. Feel free to explore alternative like [kind](https://github.com/kubernetes-sigs/kind).
+In this part, we'll learn how to deploy our containerized application to Kubernetes. We'll use [Minikube](https://github.com/kubernetes/minikube) as our local Kubernetes cluster. Feel free to explore alternatives like [Kind](https://github.com/kubernetes-sigs/kind).
 
 ## Installing Minikube
 
-Please follow the [Getting Started Guide](https://minikube.sigs.k8s.io/docs/start/?arch=%2Fmacos%2Fx86-64%2Fstable%2Fbinary+download) to setup the minikube singel cluster for your operating system.
+While Kubernetes can be run on various platforms, for this tutorial, we will use Minikube. Minikube is a lightweight Kubernetes implementation that creates a VM or container on your local machine and runs a single-node Kubernetes cluster inside it. Follow the [Getting Started Guide](https://minikube.sigs.k8s.io/docs/start/) to set up Minikube for your operating system.
 
-You'll also need kubectl for interacting with the Kubenernetes cluster, install it by following the [instructions]().
+You'll also need `kubectl` for interacting with the Kubernetes cluster. Install it by following the [official instructions](https://kubernetes.io/docs/tasks/tools/install-kubectl/).
 
-## Steps
+## Starting Minikube
 
-1. Build the Docker images (from part2 directory):
-   ```bash
-   cd ../part2
-   docker compose build
-   ```
+To start Minikube, run the following command:
 
-2. Tag the images for Kubernetes:
-   ```bash
-   minikube -p minikube docker-env | source
-   docker build -t docker-k8s-part2-frontend:latest ../part2/frontend
-   docker build -t docker-k8s-part2-backend:latest ../part2/backend
-   ```
+```bash
+minikube start
+```
 
-3. Deploy the application to Kubernetes:
-   ```bash
-   kubectl apply -f deployment.yml
-   ```
+## Building Images for Minikube
 
-4. Check the deployment status:
-   ```bash
-   kubectl get deployments
-   kubectl get pods
-   kubectl get services
-   kubectl get pvc
-   ```
+To build the Docker images for Minikube, we need to set the Docker environment to use Minikube's Docker daemon. This allows us to build images directly into Minikube's Docker environment, avoiding the need to push them to a remote registry.
 
-5. Access the application:
-   ```bash
-   minikube service frontend-service
-   ```
+```bash
+eval $(minikube docker-env)
+docker build -t docker-k8s-todo-frontend:latest ../part2/frontend
+docker build -t docker-k8s-todo-backend:latest ../part2/backend
+```
 
-## Understanding the Configuration
+To verify that the images are built correctly, you can run the following command and check if the two images are listed:
 
-The `deployment.yml` file defines several Kubernetes resources:
+```bash
+minikube image ls | grep docker-k8s-todo
+```
 
-### Deployments
-1. **Frontend Deployment**
-   - Serves the React application
-   - Exposed via NodePort service
-   - Uses the frontend image from part 2
+> There are other methods for pushing images into Minikube. See the [Minikube Handbook](https://minikube.sigs.k8s.io/docs/handbook/pushing/) for more details.
 
-2. **Backend Deployment**
-   - Runs the Go backend service
-   - Internal service (ClusterIP)
-   - Connects to the database
+## Deploying the Application
 
-3. **Database Deployment**
-   - Runs PostgreSQL
-   - Uses persistent storage
-   - Internal service (ClusterIP)
+For simpler applications, we can use a single YAML file to define all the Kubernetes resources. In this case, we have separated the resources into three files: `frontend.yml`, `backend.yml`, and `database.yml`. To deploy all of these resources, use the `kubectl apply` command with the `-f` flag to specify the directory containing the YAML files.
 
-### Services
-1. **Frontend Service**
-   - Type: NodePort
-   - Exposes the frontend to external access
-   - Port: 80
+```bash
+kubectl apply -f .
+```
 
-2. **Backend Service**
-   - Type: ClusterIP
-   - Internal service for backend communication
-   - Port: 8080
+> To understand how Kubernetes specifications are defined, refer to [Kubernetes Concepts](https://kubernetes.io/docs/concepts/) and [KubeSpec](https://kubespec.dev/).
 
-3. **Database Service**
-   - Type: ClusterIP
-   - Internal service for database access
-   - Port: 5432
+## Checking the Resources
 
-### Storage
-- **PersistentVolumeClaim**
-  - Requests 1GB of storage
-  - Used by the database for data persistence
+To check the status of the deployed resources, you can use the following commands:
+
+```bash
+kubectl get deployments
+kubectl get pods
+kubectl get services
+kubectl get pvc
+```
+
+> You can also start the Minikube dashboard by running `minikube dashboard`. This provides a user-friendly interface to view the status of all resources.
+
+## Accessing the Application
+
+You may have noticed that there is currently no way to access the application due to the internal network of Kubernetes. To access the application, we need to expose the frontend and backend. In this case, we are using a `LoadBalancer` service type and need to run the Minikube tunnel to acess the services:
+
+```bash
+minikube tunnel
+```
+
+> Explore [other ways](https://minikube.sigs.k8s.io/docs/handbook/accessing/) to access your applications, such as using NodePort or Ingress.
 
 ## Cleanup
 
 To clean up the resources:
+
 ```bash
-kubectl delete -f deployment.yml
+kubectl delete -f .
 ```
 
 To stop Minikube:
+
 ```bash
 minikube stop
 ```
 
-## Next Steps
-
-In part 4, we'll learn about scaling the application and monitoring its health using Prometheus and Grafana. 
+> To completely remove Minikube and its resources, run `minikube delete`.
