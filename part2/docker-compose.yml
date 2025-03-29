@@ -15,8 +15,6 @@ services:
       - backend # Ensures backend starts before frontend
     networks:
       - app-network # Connect to the app-network for communication with other services
-    environment:
-      - VITE_API_URL=backend:8080 # Environment variable for API URL (uses service name as hostname)
 
   # Backend service - API server built with Go
   backend:
