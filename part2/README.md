@@ -28,7 +28,7 @@ The `docker-compose.yml` file defines the services that make up your application
 To start the application, navigate to the directory containing the `docker-compose.yml` file and run:
 
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 
 This command builds, (re)creates, starts, and attaches to containers for a service. To run them in the background, add the `-d` flag.
@@ -36,7 +36,7 @@ This command builds, (re)creates, starts, and attaches to containers for a servi
 To stop the application, run:
 
 ```bash
-docker-compose down
+docker compose down
 ```
 
 This command stops and removes the containers and networks defined in the docker-compose.yml file. To also remove the named volumes, add the `-v` flag.
