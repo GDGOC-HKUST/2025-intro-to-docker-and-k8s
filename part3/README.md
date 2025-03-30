@@ -1,4 +1,4 @@
-# Part 3: Introduction to Kubernetes
+# Part 3: Deploying Multiple Applications using Kubernetes
 
 In this part, we'll learn how to deploy our containerized application to Kubernetes. We'll use [Minikube](https://github.com/kubernetes/minikube) as our local Kubernetes cluster. Feel free to explore alternatives like [Kind](https://github.com/kubernetes-sigs/kind).
 
