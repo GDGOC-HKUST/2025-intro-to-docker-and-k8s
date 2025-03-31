@@ -1,4 +1,4 @@
-planlan# Docker Compose file for a three-tier web application
+# Docker Compose file for a three-tier web application
 # This defines how multiple containers work together as a single application
 
 # Name the project for better identification in Docker Desktop and when running docker commands
