@@ -39,6 +39,12 @@ To stop the application, run:
 docker compose down
 ```
 
+To remove the volumes, run:
+
+```bash
+docker compose down -v
+```
+
 This command stops and removes the containers and networks defined in the docker-compose.yml file. To also remove the named volumes, add the `-v` flag.
 
 > For the full list of available commands, please check out the [official documentation](https://docs.docker.com/reference/cli/docker/compose/).
@@ -50,3 +56,39 @@ Once the application is running, you can access:
 - Frontend at http://localhost:3000
 - Backend API at http://localhost:8080
 - Database at http://localhost:5432
+
+## Cleanup
+
+When you're done with the tutorial, you can clean up all resources with the following steps:
+
+### Stop and Remove Containers, Networks
+
+```bash
+docker compose down
+```
+
+This stops and removes all containers and networks created by Docker Compose.
+
+### Remove Volumes (Including Data)
+
+```bash
+docker compose down -v
+```
+
+The `-v` flag also removes named volumes declared in the `volumes` section of the Compose file.
+
+### Remove Images
+
+To remove the images created during this tutorial:
+
+```bash
+docker rmi docker-k8s-part2-frontend docker-k8s-part2-backend postgres:15
+```
+
+### Docker Desktop Cleanup
+
+In Docker Desktop, you can also:
+1. Go to the "Containers" tab and delete all containers
+2. Go to the "Images" tab and delete all images
+3. Go to the "Volumes" tab and delete all volumes
+4. Go to the "Dev Environments" tab to manage development environments
