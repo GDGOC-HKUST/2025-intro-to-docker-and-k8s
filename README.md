@@ -10,4 +10,4 @@ By the end of this workshop, you will have a solid understanding of how to conta
 2. [Part 2: Deploying Multiple Applications using Docker Compose](part2/README.md)
 3. [Part 3: Deploying Multiple Applications using Kubernetes](part3/README.md)
 4. [Part 4: Observability using Prometheus and Grafana](part4/README.md)
-5. [Part 5: CI/CD Pipeline Integration using GitHuh Actions](part5/README.md)
+5. [Part 5: CI/CD Pipeline Integration using GitHub Actions](part5/README.md)
