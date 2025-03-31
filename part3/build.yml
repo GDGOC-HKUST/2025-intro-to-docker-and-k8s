@@ -1,0 +1,14 @@
+version: "3"
+
+services:
+  frontend:
+    build:
+      context: ../part2/frontend
+      args:
+        - VITE_API_URL=http://backend-service:8080
+    image: docker-k8s-todo-frontend:latest
+
+  backend:
+    build:
+      context: ../part2/backend
+    image: docker-k8s-todo-backend:latest
