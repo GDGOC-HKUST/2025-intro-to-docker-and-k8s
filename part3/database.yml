@@ -1,3 +1,5 @@
+# Database Deployment
+# This defines how the database pods will be created and managed
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -5,7 +7,7 @@ metadata:
   labels:
     app: db
 spec:
-  replicas: 1
+  replicas: 1 # Only one replica for database to avoid data conflicts
   selector:
     matchLabels:
       app: db
@@ -16,43 +18,47 @@ spec:
     spec:
       containers:
         - name: db
-          image: postgres:15
+          image: postgres:15 # Using PostgreSQL database image
           ports:
-            - containerPort: 5432
+            - containerPort: 5432 # Standard PostgreSQL port
           env:
-            - name: POSTGRES_USER
+            - name: POSTGRES_USER # Database username environment variable
               value: "postgres"
-            - name: POSTGRES_PASSWORD
-              value: "postgres"
-            - name: POSTGRES_DB
+            - name: POSTGRES_PASSWORD # Database password
+              value: "postgres" # In production, use Kubernetes Secrets
+            - name: POSTGRES_DB # Database name
               value: "postgres"
           volumeMounts:
-            - name: db-data
-              mountPath: /var/lib/postgresql/data
+            - name: db-data # Mount point for persistent storage
+              mountPath: /var/lib/postgresql/data # PostgreSQL data directory
       volumes:
-        - name: db-data
+        - name: db-data # Volume definition
           persistentVolumeClaim:
-            claimName: db-pvc
+            claimName: db-pvc # Reference to the PVC defined below
 ---
+# Database Service
+# This exposes the database deployment to other services within the cluster
 apiVersion: v1
 kind: Service
 metadata:
-  name: db-service
+  name: db-service # Name that other services will use to connect
 spec:
   selector:
-    app: db
+    app: db # Routes traffic to pods with label app=db
   ports:
-    - port: 5432
-      targetPort: 5432
-  type: ClusterIP
+    - port: 5432 # Port the service exposes
+      targetPort: 5432 # Port on the pods to route traffic to
+  type: ClusterIP # Only accessible within the cluster for security
 ---
+# Persistent Volume Claim
+# This requests storage for the database that persists beyond pod lifecycle
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: db-pvc
+  name: db-pvc # Name referenced by the volume in the deployment
 spec:
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteOnce # Can be mounted as read-write by a single node
   resources:
     requests:
-      storage: 1Gi
+      storage: 1Gi # Requesting 1 gigabyte of persistent storage

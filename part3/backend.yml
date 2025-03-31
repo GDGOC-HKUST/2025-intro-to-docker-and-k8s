@@ -1,43 +1,50 @@
-apiVersion: apps/v1
-kind: Deployment
+# Backend Deployment
+# This defines how the backend application pods will be created and managed
+apiVersion: apps/v1 # API version for Deployment resources
+kind: Deployment # Resource type being created
 metadata:
-  name: backend
+  name: backend # Name of the deployment
 spec:
-  replicas: 1
+  replicas: 1 # Number of identical pods to maintain - can be scaled up for high availability
   selector:
     matchLabels:
-      app: backend
+      app: backend # Selector to identify which pods are managed by this deployment
   template:
     metadata:
       labels:
-        app: backend
+        app: backend # Label applied to pods created by this template
     spec:
       containers:
-        - name: backend
-          image: docker-k8s-todo-backend:latest
-          imagePullPolicy: Never
+        - name: backend # Container name within the pod
+          image: docker-k8s-todo-backend:latest # Docker image to use
+          imagePullPolicy: Never # Never pull from registry - use local image only (for Minikube)
           ports:
-            - containerPort: 8080
+            - containerPort: 8080 # Port the container exposes
           env:
-            - name: DB_HOST
-              value: "db-service"
-            - name: DB_PORT
-              value: "5432"
-            - name: DB_USER
-              value: "postgres"
-            - name: DB_PASSWORD
-              value: "postgres"
-            - name: DB_NAME
-              value: "postgres"
+            - name: DB_HOST # Database hostname environment variable
+              value: "db-service" # Points to the Kubernetes service for the database
+            - name: DB_PORT # Database port environment variable
+              value: "5432" # Standard PostgreSQL port
+            - name: DB_USER # Database username environment variable
+              value: "postgres" # Username for database authentication
+            - name: DB_PASSWORD # Database password environment variable
+              value: "postgres" # Password for database authentication (in production, use Kubernetes Secrets)
+            - name: DB_NAME # Database name environment variable
+              value: "postgres" # Name of the database to connect to
+
 ---
-apiVersion: v1
-kind: Service
+# Backend Service
+# This exposes the backend deployment to network traffic
+apiVersion: v1 # API version for Service resources
+kind: Service # Resource type being created
 metadata:
-  name: backend-service
+  name: backend-service # Name of the service
 spec:
   selector:
-    app: backend
+    app: backend # Routes traffic to pods with label app=backend
   ports:
-    - port: 8080
-      targetPort: 8080
-  type: LoadBalancer
+    - port: 8080 # Port the service exposes
+      targetPort: 8080 # Port on the pods to route traffic to
+  type:
+    LoadBalancer # Service type that makes the backend accessible externally
+    # In Minikube, requires 'minikube tunnel' to be accessible

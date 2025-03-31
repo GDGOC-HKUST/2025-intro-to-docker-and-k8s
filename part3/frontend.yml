@@ -1,32 +1,41 @@
-apiVersion: apps/v1
-kind: Deployment
+# Frontend Deployment
+# This defines how the frontend application pods will be created and managed
+apiVersion: apps/v1 # API version for Deployment resources
+kind: Deployment # Resource type being created (deployment is a collection of pods)
 metadata:
-  name: frontend
+  name: frontend # Name of the deployment
 spec:
-  replicas: 1
+  replicas: 1 # Number of identical pods to maintain - can be scaled up for high availability
   selector:
     matchLabels:
-      app: frontend
+      app: frontend # Selector to identify which pods are managed by this deployment
   template:
     metadata:
       labels:
-        app: frontend
+        app: frontend # Label applied to pods created by this template
     spec:
       containers:
-        - name: frontend
-          image: docker-k8s-todo-frontend:latest
-          imagePullPolicy: Never
+        - name: frontend # Container name within the pod
+          image: docker-k8s-todo-frontend:latest # Docker image to use
+          imagePullPolicy:
+            Never # Never pull from registry - use local image only
+            # This is specific to Minikube development environment
           ports:
-            - containerPort: 3000
----
-apiVersion: v1
-kind: Service
+            - containerPort: 3000 # Port the container exposes
+
+--- 
+# Frontend Service
+# This exposes the frontend deployment to network traffic
+apiVersion: v1 # API version for Service resources
+kind: Service # Resource type being created
 metadata:
-  name: frontend-service
+  name: frontend-service # Name of the service
 spec:
   selector:
-    app: frontend
+    app: frontend # Routes traffic to pods with label app=frontend
   ports:
-    - port: 3000
-      targetPort: 3000
-  type: LoadBalancer
+    - port: 3000 # Port the service exposes
+      targetPort: 3000 # Port on the pods to route traffic to
+  type:
+    LoadBalancer # Service type that makes the frontend accessible externally
+    # In Minikube, requires 'minikube tunnel' to be accessible
