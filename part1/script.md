@@ -1,5 +1,123 @@
 # Part 1 - Deploying an Application using Docker
 
+## Script Overview
+
+### Docker Containerization Workflow
+```mermaid
+graph TD
+    subgraph Development
+        App[Application Code]
+        Docker[Dockerfile]
+    end
+    
+    subgraph Build Process
+        Image[Docker Image]
+        Layer1[Base Image Layer]
+        Layer2[Dependencies Layer]
+        Layer3[Application Layer]
+        Layer4[Runtime Config Layer]
+    end
+    
+    subgraph Deployment
+        Container[Docker Container]
+        Port[Port Mapping]
+        Host[Host System]
+    end
+    
+    App -->|Source Code| Docker
+    Docker -->|docker build| Image
+    Image --> Layer1
+    Image --> Layer2
+    Image --> Layer3
+    Image --> Layer4
+    Image -->|docker run| Container
+    Container -->|Expose| Port
+    Port -->|Access| Host
+    
+    classDef app fill:#e1f5fe,stroke:#01579b
+    classDef docker fill:#e8f5e9,stroke:#2e7d32
+    classDef image fill:#fff3e0,stroke:#ff6f00
+    classDef container fill:#ede7f6,stroke:#4527a0
+    classDef host fill:#fce4ec,stroke:#880e4f
+    
+    class App,Layer3 app
+    class Docker docker
+    class Image,Layer1,Layer2,Layer4 image
+    class Container,Port container
+    class Host host
+```
+
+### Build and Run Process
+```mermaid
+sequenceDiagram
+    participant D as Developer
+    participant CLI as Docker CLI
+    participant E as Docker Engine
+    participant R as Registry
+    participant H as Host System
+    
+    D->>CLI: docker build -t app:latest .
+    CLI->>E: Build image request
+    E->>E: Create image layers
+    E-->>CLI: Image built successfully
+    CLI-->>D: Build complete
+    
+    Note over D,H: Image is ready
+    
+    D->>CLI: docker run -p 8080:8080 app:latest
+    CLI->>E: Run container request
+    E->>E: Create container
+    E->>E: Map ports
+    E->>E: Start container process
+    E-->>CLI: Container started
+    CLI-->>D: Container running
+    
+    H->>Container: Access http://localhost:8080
+    Container-->>H: Serve web content
+    
+    Note over D,H: Application accessible
+    
+    D->>CLI: docker stop <container-id>
+    CLI->>E: Stop container request
+    E->>E: Terminate container
+    E-->>CLI: Container stopped
+    CLI-->>D: Stop complete
+```
+
+### Summary
+**Docker: Containerization for Modern Application Deployment**
+
+This tutorial provides a hands-on introduction to Docker, the industry-standard containerization platform that revolutionizes how we build, ship, and run applications.
+
+**What We'll Build:**
+- A containerized Go web application that can run consistently across any environment
+- A well-structured Docker image with optimized layers
+- A running container with proper port mappings for web access
+- A solid foundation for further containerization practices
+
+**Core Docker Concepts Covered:**
+1. **Dockerfile**: The blueprint that defines how to package our application
+2. **Docker Images**: Immutable packages containing everything needed to run an application
+3. **Docker Containers**: Isolated, lightweight runtime environments for our application
+4. **Layer Caching**: The performance optimization that speeds up builds
+5. **Port Mapping**: The networking configuration that exposes our application
+
+**Why Docker Matters:**
+- **Consistency**: Eliminates "works on my machine" problems
+- **Isolation**: Prevents dependency conflicts between applications
+- **Efficiency**: Uses fewer resources than traditional virtual machines
+- **Portability**: Runs the same across development, testing, and production
+- **Scalability**: Forms the foundation for orchestration with Kubernetes
+
+**Development Benefits:**
+- Faster onboarding for new developers
+- Simplified local development environments
+- Identical environments across all stages of deployment
+- Easier integration testing with containerized dependencies
+- Reduced debugging time for environment-related issues
+
+By completing this tutorial, you'll understand the fundamentals of Docker and be equipped to containerize your own applications, setting the stage for more advanced container orchestration with Kubernetes in upcoming parts.
+
 ## Pre-Recording Setup Instructions
 
 ### Technical Setup
@@ -26,7 +144,11 @@
 ### [SCENE 1: Introduction] - 30 seconds
 *[Start with terminal window and editor side by side, GDG HKUST logo in corner]*
 
-**YOU:** "Hey everyone! 👋 Welcome to this GDG HKUST tutorial on Docker! [*gesture: open arms welcome*] I'm excited to show you how Docker is revolutionizing the way we build, ship, and run applications. Instead of a theoretical lecture, we'll learn by doing! 💻 In just a few minutes, we'll containerize this simple Go web server step by step. Ready? Let's dive in!" [*gesture: brings hands together showing focus*]
+**YOU:** "Hey everyone! 👋 Welcome to this Google Developer Group HKUST tutorial on Docker and Kubernetes! [*gesture: open arms welcome*] I'm excited to show you how Docker is revolutionizing the way we build, ship, and run applications. 
+
+I'm Andy, a core tech team member of GDG HKUST, and i will be your guide in this tutorial.
+
+Instead of a theoretical lecture, we'll learn by doing! 💻 In just a few minutes, we'll containerize this simple Go web server step by step. Ready? Let's dive in!" [*gesture: brings hands together showing focus*]
 
 ### [SCENE 2: The Application] - 1 minute
 *[Focus on the code editor with main.go open, use visual pointer to highlight code]*
