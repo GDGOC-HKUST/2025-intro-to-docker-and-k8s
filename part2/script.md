@@ -87,7 +87,7 @@ sequenceDiagram
 ```
 
 ### Summary
-This tutorial demonstrates how to use Docker Compose to orchestrate a multi-container application, specifically a todo application with React frontend, Go backend, and PostgreSQL database. The session walks through the entire process from understanding the project structure to deploying and managing the application using Docker Compose.
+This tutorial shows how to use Docker Compose to run a multi-container todo app (React frontend, Go backend, PostgreSQL DB). We'll go from project setup to running the app with Docker Compose.
 
 ### Duration
 - **Total Time**: 8-10 minutes
@@ -96,60 +96,60 @@ This tutorial demonstrates how to use Docker Compose to orchestrate a multi-cont
   - Introduction: 30 seconds
   - Project Structure: 1 minute
   - Docker Compose File: 2 minutes
-  - Application Deployment: 1 minute
-  - Exploration & Demo: 2 minutes
-  - Cleanup: 1 minute
-  - Advanced Features: 2 minutes
+  - Starting the App: 1 minute
+  - Exploring the App: 2 minutes
+  - Stopping the App: 1 minute
+  - Compose File Details (Optional): 1.5 minutes
   - Production Tips: 30 seconds
 
 ### Key Focus Areas
-1. **Multi-Container Architecture**
-   - Understanding service relationships
+1. **Multi-Container Apps**
+   - How services connect
    - Container communication
-   - Data persistence
+   - Saving data
 
-2. **Docker Compose Fundamentals**
-   - YAML configuration
-   - Service definitions
-   - Network & volume management
+2. **Docker Compose Basics**
+   - YAML setup
+   - Defining services
+   - Networks & volumes
 
-3. **Practical Development**
-   - Local development workflow
-   - Debugging techniques
-   - Common commands & tools
+3. **Development Workflow**
+   - Running locally
+   - Debugging tips
+   - Useful commands
 
 4. **Best Practices**
-   - Production considerations
-   - Security aspects
-   - Resource management
+   - Production setup ideas
+   - Security notes
+   - Managing resources
 
 ### Learning Objectives
-By the end of this tutorial, viewers will understand:
-- How to define multi-container applications using Docker Compose
-- The relationship between different services in a containerized application
-- Basic to advanced Docker Compose commands and features
-- Best practices for container orchestration
+By the end, viewers will know:
+- How to define multi-container apps with Docker Compose
+- How services interact in containers
+- Key Docker Compose commands
+- Basic container orchestration best practices
 
 ## Pre-Recording Setup Instructions
 
 [*VISUAL: Start with GDG HKUST logo animation fading into setup checklist*]
 
 ### Technical Setup
-1. **Docker & Docker Compose** - Ensure Docker and Docker Compose are properly installed and running
-2. **Terminal Setup** - Use a clean terminal with increased font size (16-20pt) for better visibility
-3. **Browser** - Have a web browser ready for viewing the application
-4. **Text Editor/IDE** - Have VS Code or your preferred editor ready with the project files open
-5. **GDG Branding** - Have GDG HKUST logo and branding elements ready for overlays
-6. **Demo Checkpoints** - Test all commands beforehand to ensure smooth demonstration
-7. **Application Preview** - Run the application once beforehand to make sure everything works
+1. **Install Docker & Compose**: Make sure Docker and Docker Compose are installed and running.
+2. **Terminal Ready**: Use a clean terminal, maybe with larger font size.
+3. **Browser Ready**: Have a web browser open.
+4. **Editor Ready**: Have your code editor open with the project files.
+5. **GDG Branding**: Keep GDG HKUST logo/overlays handy.
+6. **Test Commands**: Try all commands beforehand.
+7. **Test App**: Run `docker-compose up` once before recording to check.
 
 ### Recording Environment
-1. **Clean Desktop** - Remove personal files, notifications, and set a neutral background
-2. **Privacy Check** - Close any sensitive information, emails, or personal apps
-3. **Screen Resolution** - Set to 1920x1080 for optimal viewing
-4. **Microphone Test** - Check audio quality before starting
-5. **Do Not Disturb** - Enable Do Not Disturb mode to avoid notifications
-6. **Rehearse Once** - Run through the commands once before recording to ensure everything works
+1. **Clean Desktop**: No personal files or distracting notifications.
+2. **Privacy Check**: Close sensitive apps/info.
+3. **Screen Resolution**: 1920x1080 recommended.
+4. **Audio Check**: Test your microphone.
+5. **Do Not Disturb**: Turn on DND mode.
+6. **Quick Rehearsal**: Run through the steps once.
 
 
 
@@ -160,85 +160,62 @@ By the end of this tutorial, viewers will understand:
 [*TRANSITION: Use slide-in animation for terminal and editor windows*]
 [*VISUAL: GDG HKUST logo should pulse briefly when mentioned*]
 
-**YOU:** "Hey there **GDG community**! 👋 Welcome back to our **Docker** and **Kubernetes** series! [*gesture: open arms welcome*] In Part 1, we containerized a simple web server. Today, we're *leveling up*! 🚀 We'll use **Docker Compose** to orchestrate *multiple containers* working together as a single application. Let's build a complete **todo app** with *frontend*, *backend*, and *database* containers!" [*gesture: hands showing multiple components coming together*]
+**YOU:** "Hey there! 👋 Welcome back to our **Docker** and **Kubernetes** series! [*gesture: open arms welcome*] In Part 1, we containerized a simple web server. Today, we're *leveling up*! 🚀 We'll use **Docker Compose** to orchestrate *multiple containers* working together as a single application. Let's build a complete **todo app** with *frontend*, *backend*, and *database* containers!" [*gesture: hands showing multiple components coming together*]
 
 ---
 
 ### [SCENE 2: Understanding the Project Structure] - 1 minute
-[***TRANSITION**: Smooth zoom into editor window with project structure*]
-[*VISUAL: Use tree-style animation to highlight each component as mentioned*]
+[***TRANSITION**: Smooth zoom into editor window showing project folders*]
+[*VISUAL: Highlight frontend, backend folders*]
 
-**YOU:** "Let's first understand what we're working with. 🔍 Our application has **three main components**:" [*gesture: counting with fingers*]
-
-[***VISUAL**: Animated cards sliding in for each component*]
-[***TRANSITION**: Gentle pulse effect as each directory is highlighted*]
+**YOU:** "Let's quickly look at our app structure. 🔍 We have three parts:" [*gesture: counting with fingers*]
 
 **YOU:** "
-1. First, a React frontend that provides our user interface. 
-2. Second, a Go backend API built with Gin and GORM. 
-3. And third, a PostgreSQL database to store our todos. 
+1. A **React frontend** for the user interface.
+2. A **Go backend** API to handle logic.
+3. A **PostgreSQL database** to store data.
 
-In the real world, modern applications are rarely single containers - they're distributed systems with multiple specialized parts!" [*gesture: hands spreading out to show distribution*]
+Real apps often have multiple parts like this. Docker Compose makes managing them easier." [*gesture: hands spreading out to show distribution*]
 
-*[Show the directory structure with emphasis]*
-
-**YOU:** "Before Docker Compose, managing all these containers manually was tedious and error-prone. Let's see how Docker Compose simplifies everything! 💡" [*gesture: wiping forehead showing relief*]
+**YOU:** "Manually handling these could be tricky. Let's see how Docker Compose helps! 💡" [*gesture: wiping forehead showing relief*]
 
 ---
 ### [SCENE 3: The Docker Compose File] - 2 minutes
-[***TRANSITION**: Slide editor window to center with blur effect*]
-[***VISUAL**: Open docker-compose.yml with typing animation*]
+[***TRANSITION**: Focus on editor showing docker-compose.yml*]
+[*VISUAL**: Highlight sections as they are discussed*]
 
-**YOU:** "Here's the star of today's show - the **docker-compose.yml** file! 🌟 This single file defines our entire application architecture." [*gesture: presenting with both hands*]
+**YOU:** "This is the **docker-compose.yml** file – the control center for our app. 🌟 It tells Docker how to run everything together." [*gesture: presenting with both hands*]
 
-[***VISUAL**: Highlight services section with glowing border*]
-[***TRANSITION**: Use smooth scrolling when moving between file sections*]
+**YOU:** "Inside, we define **services**. Think of each service as a container. We have three: `frontend`, `backend`, and `db`." [*gesture: point to each service name*]
 
-**YOU:** "Docker Compose uses a YAML format where we define 'services' - these are our containers. 
+**YOU:** "For each service, we tell Compose:
+- **How to build it**: Often using a Dockerfile in its folder (`build: ./frontend`).
+- **What ports to open**: Connecting container ports to our machine (`ports: - '3000:3000'`).
+- **Dependencies**: Which services need to start first (`depends_on: - backend`). This helps ensure things start in the right order." [*gesture: showing dependency link*]
 
-Notice we have three: **frontend, backend, and db**. For each service, we define exactly how it should be built and configured." [*gesture: point to each service*]
+*[Highlight backend environment variables]*
 
-*[Highlight the **frontend** section]*
+**YOU:** "We also set **environment variables**, like database connection details for the backend. Compose lets services talk to each other using their names (like `db`) – super handy! 🪄" [*gesture: magic wand motion*]
 
-**Frontend:** 
-1. For the frontend, we're building from the Dockerfile in the frontend directory. 
-2. We map port 3000 on our host to port 3000 in the container. 
-3. The 'depends_on' field tells Docker Compose that this service needs the backend to be running first. [*gesture: showing dependency relationship*]
+*[Highlight db volume]*
 
-*[Highlight the **backend** section]*
+**YOU:** "For the database, we use the official PostgreSQL image and a **volume** (`db-data`). Volumes save our data even if the container stops or is removed. Crucial for databases! 💾" [*gesture: safe box motion*]
 
-**Backend:** 
-1. Similarly, the backend builds from its own Dockerfile and exposes port 8080. 
-2. It depends on the database service. 
+*[Highlight networks/volumes at bottom]*
 
-Notice these environment variables - they tell our backend how to connect to the database. 
-
-The magic of Docker Compose is that we can use service names like 'db' as hostnames! 🪄" [*gesture: magic wand motion*]
-
-*[Highlight the **db** section]*
-
-**Database:** 
-1. For the database, we're using the official PostgreSQL image from Docker Hub. 
-2. We define environment variables for configuration and use a named volume for data persistence. 
-3. This ensures our data survives even if the container is removed! [*gesture: safe box motion*]
-
-*[Highlight the networks and volumes sections]*
-
-**YOU:** "At the bottom, we define the network that connects our containers and the volume for data persistence. Docker Compose creates this infrastructure automatically! Isn't that elegant? 👌" [*gesture: chef's kiss*]
+**YOU:** "Compose also sets up a **network** so containers can communicate easily and manages our **volumes**. All defined right here! 👌" [*gesture: chef's kiss*]
 
 ---
 
 ### [SCENE 4: Starting the Application] - 1 minute
-[***TRANSITION**: Slide terminal window in from right*]
-[***VISUAL**: GDG-styled command prompt with custom font and colors*]
+[***TRANSITION**: Slide terminal window in*]
+[*VISUAL**: Clear terminal prompt*]
 
-**YOU:** "Let's see **Docker Compose** in action! With *one command*, we'll launch our entire application stack."
+**YOU:** "Now, let's start everything with just **one command**!" [*gesture: pointing finger up*]
 
-[***VISUAL**: Command typing animation with highlighted syntax*]
-[***TRANSITION**: Split screen showing logs and command input*]
+[***VISUAL**: Command typing animation*]
 
-
-*[Run the command with visual highlighting]*
+*[Run the command]*
 ```
 docker-compose up --build
 ```
@@ -253,123 +230,104 @@ docker-compose up --build
 ---
 
 ### [SCENE 5: Exploring the Running Application] - 2 minutes
-[*TRANSITION: Smooth pan to new terminal window*]
-[*VISUAL: Keep compose logs visible with reduced opacity*]
+[*TRANSITION: Pan to a new terminal window, keep logs slightly visible if possible*]
 
-**YOU:** "While our application is running, let's see what Docker Compose created for us." [*gesture: investigative look*]
+**YOU:** "Okay, our app is running! Let's see what Compose did." [*gesture: investigative look*]
 
 *[Run command]*
 ```
 docker-compose ps
 ```
 
-**YOU:** "This shows all services in our composition and their status. All three containers are running! 🟢" [*gesture: thumbs up*]
+**YOU:** "This lists our running services: frontend, backend, and db. All running! 🟢" [*gesture: thumbs up*]
 
-[*TRANSITION: Elegant slide to browser window*]
-[*VISUAL: URL bar typing animation for http://localhost:3000*]
+[*TRANSITION: Smooth slide to browser window*]
+[*VISUAL: Go to http://localhost:3000*]
 
-**YOU:** "Let's check our frontend!" [*gesture: presenting the app*]
+**YOU:** "Let's check the app in the browser!" [*gesture: presenting the app*]
 
-*[Interact with the Todo app - add a new todo, mark one as complete, etc.]*
+*[Interact with the Todo app: Add a task, mark complete]*
 
-**YOU:** "Our Todo application works! 🎉 But what's really happening here? When you add a todo, the frontend makes an API call to the backend, which stores it in the PostgreSQL database." [*gesture: flow motion from frontend to backend to database*]
+**YOU:** "Whoray! It works! 🎉 When we add a todo, the React frontend talks to the Go backend API, which saves it in the PostgreSQL database container." [*gesture: trace flow with finger*]
 
 *[Switch back to terminal]*
 
-**YOU:** "Let's explore some Docker Compose commands that help us manage this multi-container application."
+**YOU:** "Need to debug? We can easily check logs for one service:"
 
 *[Run command]*
 ```
 docker-compose logs backend
 ```
 
-**YOU:** "We can view logs for a specific service. Very helpful when troubleshooting! 🔍" [*gesture: magnifying glass*]
+**YOU:** "Or run commands inside a container, like checking the database directly:" [*gesture: diving in motion*]
 
 *[Run command]*
 ```
-docker-compose exec db psql -U postgres
+docker-compose exec db psql -U postgres -c "SELECT * FROM todos;"
 ```
 
-**YOU:** "We can even execute commands inside a specific container. Here we're connecting to the PostgreSQL shell. Let's check our todos table!" [*gesture: diving in motion*]
+**YOU:** "See? There's our data! Compose makes it easy to interact with individual parts. 📊" [*gesture: connected hands*]
 
-*[Inside PostgreSQL shell]*
-```
-\c postgres
-SELECT * FROM todos;
-```
-
-**YOU:** "Look! There are our todos stored in the database! 📊 Everything's connected and working together seamlessly." [*gesture: connected hands*]
-
-*[Exit PostgreSQL with \q and return to terminal]*
+---
 
 ### [SCENE 6: Stopping and Cleaning Up] - 1 minute
-[*TRANSITION: Fade to terminal view with GDG visual elements*]
-[*VISUAL: Command prompt with custom styling*]
+[*TRANSITION: Focus on terminal*]
 
-**YOU:** "When we're done, we can shut everything down just as easily as we started it." [*gesture: closing motion*]
+**YOU:** "Done with the app? Stopping is just as easy." [*gesture: closing motion*]
 
-*[Open new terminal and run command]*
+*[Run command]*
 ```
 docker-compose down
 ```
 
-**YOU:** "The `down` command stops and removes all the containers, networks, and default volumes created by `up`. If we want to remove the named volumes too, we'd add the `-v` flag." [*gesture: sweeping motion*]
+**YOU:** "The `down` command stops and removes the containers and network. Quick and clean! To remove the data volume too, you'd add `-v`. 🧹" [*gesture: dusting hands*]
 
 *[Show containers stopping]*
 
-**YOU:** "Notice how Docker Compose is handling the graceful shutdown of our entire stack! 🧹" [*gesture: dusting hands*]
+---
 
-### [OPTIONAL: SCENE 7: Exploring the docker-compose.yml in Depth] - 2 minutes
-[*TRANSITION: Split screen effect with smooth sliding animation*]
-[*VISUAL: Code highlighting follows explanation*]
+### [OPTIONAL: SCENE 7: Compose File Details] - 1.5 minutes
+[*TRANSITION: Focus back on docker-compose.yml*]
 
-**YOU:** "Let's take a deeper dive into some key Docker Compose features:" [*gesture: diving motion*]
+**YOU:** "Quickly, let's revisit some key concepts in the file:" [*gesture: quick review motion*]
 
-*[Highlight networking section]*
-
-**YOU:** "Docker Compose creates a dedicated network for our application. This allows containers to find each other by service name. The `app-network` with bridge driver gives our containers an isolated communication channel." [*gesture: connecting motion*]
+*[Highlight networking]*
+**YOU:** "**Networks**: Compose creates a private network so containers can talk using service names (like `backend` or `db`)."
 
 *[Highlight environment variables]*
+**YOU:** "**Environment Variables**: Great for configuration. For secrets like passwords, use `.env` files or Docker secrets in production."
 
-**YOU:** "Environment variables provide a clean way to configure services. In production, you'd want to use Docker secrets or environment files for sensitive information like database passwords." [*gesture: lock motion*]
+*[Highlight volumes]*
+**YOU:** "**Volumes**: Essential for saving data (like in our `db-data` volume). Without them, database data disappears when the container stops."
 
-*[Highlight volumes section]*
+*[Highlight depends_on]*
+**YOU:** "**Depends On**: Controls startup order. Remember, this waits for the *container* to start, not necessarily the *application inside* it. Production often needs health checks."
 
-**YOU:** "Volumes are critical for stateful services like databases. Without this `db-data` volume, we'd lose all our data when the container stops! 💾" [*gesture: saving motion*]
+---
 
-*[Highlight depends_on section]*
+### [SCENE 8: Production Tips] - 30 seconds
+[*TRANSITION: Professional slide with key points*]
 
-**YOU:** "The depends_on feature ensures services start in the right order. However, it only waits for containers to start, not for services to be fully ready. For production, you'd want to implement proper health checks." [*gesture: stacking blocks*]
+**YOU:** "Quick tips if using Compose beyond local development:" [*gesture: quick tips gesture*]
 
-### [SCENE 8: Production Considerations] - 1 minute
-[*TRANSITION: Professional slide transition with GDG branding*]
-[*VISUAL: Animated bullet points with icons*]
+**YOU:** "
+- Use separate `docker-compose.prod.yml` files.
+- Manage sensitive data securely (env files, secrets).
+- Add health checks for reliable startup.
+- For large scale, consider **Kubernetes** (our next topic!)." [*gesture: pointing forward*]
 
-**YOU:** "Before we wrap up, let's quickly discuss some **production considerations** for Docker Compose:" [*gesture: professional stance*]
-
-*[Show bullet points with animations]*
-
-**YOU:** "First, separate development and production compose files. Production needs different configurations, like removing volume mounts for source code.
-
-Second, use environment variables and .env files for different environments.
-
-Third, implement health checks for robust service orchestration.
-
-Fourth, consider container orchestration platforms like **Kubernetes** for larger-scale deployments, which we'll cover in Part 3!
-
-And finally, always secure your services with proper networking, strong passwords, and access controls." [*gesture: checking off points*]
+---
 
 ### [SCENE 9: Conclusion] - 30 seconds
-[*TRANSITION: Camera view fades in with GDG branding elements*]
-[*VISUAL: Docker Compose visualization with flowing animation*]
+[*TRANSITION: Camera view with GDG branding*]
 
-**YOU:** "And there you have it! 🏆 We've successfully deployed a **multi-container application** using **Docker Compose**. We've seen how *easy* it is to define, build, and manage complex applications with multiple services."
+**YOU:** "And that's Docker Compose! 🏆 We ran a **multi-container app** with one command, defining everything in a single file. Super useful for development!"
 
-[*VISUAL: Success animation with GDG colors*]
+[*VISUAL: Success animation*]
 
-**YOU:** "In the next GDG HKUST tutorial, we'll take our application to the next level with Kubernetes orchestration! 🚢" [*gesture: forward pointing motion*]
+**YOU:** "Next time, we'll deploy this same application to **Kubernetes**! 🚢 Stay tuned!" [*gesture: forward pointing motion*]
 
-**YOU:** "If you found this helpful, don't forget to like, subscribe, and share with your fellow developers. Thanks for joining us on this Docker Compose journey! 👋" [*gesture: wave goodbye*]
+**YOU:** "If this helped, please like and subscribe to GDG HKUST! Thanks for watching! 👋" [*gesture: wave goodbye*]
 
 ## Motion Instructions and Timing
 
