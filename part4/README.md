@@ -1,6 +1,23 @@
 # Part 4: Observability using Prometheus and Grafana
 
-In this part, we'll learn how to set up an observability workload for monitoring with Prometheus and Grafana.
+In this part, we'll learn how to set up an observability workload for monitoring with **Prometheus** and **Grafana**.
+
+## What are Prometheus and Grafana?
+
+**Prometheus:**
+- Open-source monitoring and alerting toolkit
+- Collects and stores metrics as time series data
+- Features a powerful query language (PromQL)
+- Uses a pull-based architecture to scrape metrics from services
+
+**Grafana:**
+- Open-source analytics and visualization platform
+- Creates interactive, customizable dashboards
+- Supports multiple data sources including Prometheus
+- Makes complex metrics data understandable through visual representations
+
+Together, they form a powerful monitoring stack where Prometheus collects the data and Grafana visualizes it.
+
 
 ## Overview
 
