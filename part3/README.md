@@ -2,6 +2,10 @@
 
 In this part, we'll learn how to deploy our containerized application to Kubernetes. We'll use [Minikube](https://github.com/kubernetes/minikube) as our local Kubernetes cluster. Feel free to explore alternatives like [Kind](https://github.com/kubernetes-sigs/kind).
 
+## Introduction to Kubernetes
+
+![](images/2025-04-20-19-28-49.png)
+
 ## Installing Minikube
 
 While Kubernetes can be run on various platforms, for this tutorial, we will use `Minikube`. Minikube is a lightweight Kubernetes implementation that creates a VM or container on your local machine and runs a single-node Kubernetes cluster inside it. Follow the [Getting Started Guide](https://minikube.sigs.k8s.io/docs/start/) to set up Minikube for your operating system.
@@ -107,4 +111,6 @@ To stop Minikube:
 minikube stop
 ```
 
-> To completely remove Minikube and its resources, run `minikube delete`.
+## Credit
+
+This part of tutorial is based on the [Kubernetes Tutorial](https://kubernetes.io/docs/tutorials/kubernetes-basics/) and [Minikube Handbook](https://minikube.sigs.k8s.io/docs/handbook/).

@@ -174,11 +174,9 @@ By the end of this tutorial, viewers will understand:
 [*TRANSITION: Slide to clean screen with Kubernetes architecture diagram*]
 [*VISUAL: Animated Kubernetes components appearing as mentioned*]
 
-[PRESENTER NOTE: Use the analogy of a restaurant to make Kubernetes concepts relatable]
-
 **YOU:** "Before diving in, let's understand what **Kubernetes** brings to the table compared to Docker Compose." [*gesture: comparison motion*]
 
-**YOU:** "Think of **Kubernetes** as a restaurant management system, while Docker Compose is more like cooking at home. **Kubernetes** is a *container orchestration platform* that manages containerized applications across multiple machines. It provides *scaling* (adding more cooks when busy), *self-healing* (replacing a chef who calls in sick), *load balancing* (distributing orders evenly), and *automated rollouts* (updating the menu without closing the restaurant)." 
+**YOU:** "**Kubernetes** is a powerful container orchestration platform that manages containerized applications across multiple machines. As shown in this diagram, we can see the evolution from traditional deployment to Kubernetes deployment. While Docker Compose helps us run multiple containers on a single host, Kubernetes extends this capability across an entire cluster of machines."
 
 **YOU:** "Where Docker Compose is perfect for local development, **Kubernetes** powers production environments at any scale." [*gesture: small to large scaling motion*]
 
@@ -187,19 +185,17 @@ By the end of this tutorial, viewers will understand:
 [*VISUAL: **SLIDES**: Each component appears with animation*]
 
 **YOU:** "
-1. **Pods** - The smallest deployable units containing one or more containers. Think of a pod as a workstation in our restaurant where one or more chefs (containers) work together. For example, our **Todo app's frontend** will run in a pod.
+1. **Pods** - Smallest deployable units containing containers. Our Todo app's frontend and backend will run in separate pods.
 
-2. **Deployments** - Managing replicated pods and updates. Like a restaurant manager ensuring there are always enough chefs on duty. We'll create deployments to ensure our frontend and backend pods are always running.
+2. **Deployments** - Manage pod replicas and automatically replace failed pods.
 
-3. **Services** - Exposing pods to network traffic. Like the waitstaff that connects customers to the kitchen. We'll create services so users can access our Todo app and so the frontend can communicate with the backend.
+3. **Services** - Provide stable network endpoints for pods. They'll connect our app components and enable user access.
 
-4. **Persistent Volumes** - Managing storage that outlives pods. Similar to the restaurant's pantry that remains even if chefs change. Our database needs persistent storage so we don't lose Todo items when pods restart.
+4. **Persistent Volumes** - Storage that exists independently of pods, ensuring our database data survives pod restarts.
 
-5. **ConfigMaps and Secrets** - Separating configuration from code. Like recipe books and secret ingredients that can be updated without changing the chefs. We'll use these to store database connection details without hardcoding them.
+5. **ConfigMaps and Secrets** - Store configuration separately from code.
 
-Let's see these concepts in action with our Todo application!" [*gesture: transition motion*]
-
-[ENGAGEMENT QUESTION: "If you're familiar with Docker Compose, what do you think would be the biggest difference in how we manage our application?"]
+We only briefly introduced these concepts about kubernetes, if you are interested in learning more, you can visit kubernetes.io, now we'll dive deeper into the **implementation**.
 
 ---
 
