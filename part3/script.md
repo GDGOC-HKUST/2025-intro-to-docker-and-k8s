@@ -184,18 +184,26 @@ By the end of this tutorial, viewers will understand:
 
 [*VISUAL: **SLIDES**: Each component appears with animation*]
 
-**YOU:** "
-1. **Pods** - Smallest deployable units containing containers. Our Todo app's frontend and backend will run in separate pods.
+https://www.youtube.com/watch?v=TlHvYWVUZyc
 
-2. **Deployments** - Manage pod replicas and automatically replace failed pods.
+Here is a video that explains the concepts of kubernetes in 6 mins, it is from one of my favorite youtube channel, **ByteByteGo**, a channel about system design and system architecture. Please watch the video and come back.
 
-3. **Services** - Provide stable network endpoints for pods. They'll connect our app components and enable user access.
+Lets recap the concepts of kubernetes:
+1. **Pods** - Smallest deployable units containing containers that share resources. Our Todo app components will run in separate pods.
 
-4. **Persistent Volumes** - Storage that exists independently of pods, ensuring our database data survives pod restarts.
+2. **Deployments** - Manage pods and maintain desired replica count, automatically replacing failed pods.
 
-5. **ConfigMaps and Secrets** - Store configuration separately from code.
+3. **Services** - Network abstractions providing stable endpoints for pods, enabling communication between components.
 
-We only briefly introduced these concepts about kubernetes, if you are interested in learning more, you can visit kubernetes.io, now we'll dive deeper into the **implementation**.
+4. **Persistent Volumes** - Storage resources independent of pods, ensuring data persistence across pod lifecycles.
+
+5. **ConfigMaps and Secrets** - Store configuration separately from code, like database connection details.
+
+We only briefly introduced these concepts about kubernetes, if you are interested in learning more, you can visit kubernetes.io, now we'll dive deeper into the implementation.
+
+Let's see these concepts in action with our Todo application!" [*gesture: transition motion*]
+
+[ENGAGEMENT QUESTION: "If you're familiar with Docker Compose, what do you think would be the biggest difference in how we manage our application?"]
 
 ---
 
