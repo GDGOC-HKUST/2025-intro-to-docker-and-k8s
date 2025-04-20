@@ -275,124 +275,162 @@ minikube image ls | grep docker-k8s-todo
 
 ---
 
-### [SCENE 5: Kubernetes Manifests] - 2 minutes
+### [SCENE 5: Kubernetes Manifests] - ~1.5 minutes
 [*TRANSITION: Slide editor window to center*]
-[*VISUAL: Open YAML files with syntax highlighting*]
+[*VISUAL: Show `frontend.yml` file*]
 
-[PRESENTER NOTE: Break down the YAML files into understandable chunks, using the restaurant analogy]
+**YOU:** "Alright, let's look at how we define our application in **Kubernetes**. Unlike Docker Compose's single file, we use separate YAML manifests for each component. Think of them as blueprints. Let's start with the frontend."
 
-**YOU:** "Unlike Docker Compose's single file, in **Kubernetes** we define our infrastructure using multiple YAML manifests with specific **resource types** and **API versions**. Think of these as detailed recipes and instructions for different parts of our restaurant." [*gesture: presenting files*]
-
-*[Open and highlight `frontend.yml`]*
-
-**YOU:** "Let's focus on key Kubernetes concepts you won't find in Docker Compose:" [*gesture: pointing*]
+**YOU:** "First, we define a `Deployment`. This tells Kubernetes how to run and manage our frontend application instances, or 'Pods'."
 
 ```yaml
-# 1. API Versioning
-apiVersion: apps/v1
-kind: Deployment
-
-# 2. Label-selector system for service discovery
-selector:
-  matchLabels:
-    app: frontend  # Which pods belong to this deployment?
-    
-# 3. Image pull policies
-imagePullPolicy: Never  # When to fetch images from registry
-```
-
-**YOU:** "The **API versioning** is how Kubernetes manages changes to its API over time - like recipe book editions. The **label-selector mechanism** is how different parts find each other - like color-coded tickets in a restaurant that connect orders to tables. This creates a loose coupling between services and pods, enabling powerful features like rolling updates and scaling." [*gesture: flexibility motion*]
-
-*[Open and highlight `database.yml`]*
-
-**YOU:** "The database manifest shows how powerful Kubernetes can be. First, notice how a single file defines multiple resources separated by `---` - like different sections of a recipe:" [*gesture: separation motion*]
-
-```yaml
-# First resource: Deployment
-apiVersion: apps/v1
-kind: Deployment
+# frontend.yml (Deployment Part 1)
+apiVersion: apps/v1  # The K8s API version for Deployments
+kind: Deployment     # We're creating a Deployment object
 metadata:
-  name: db
-# ...configuration...
----
-# Second resource: Service
-apiVersion: v1
-kind: Service
-metadata:
-  name: db-service
-# ...configuration...
----
-# Third resource: PersistentVolumeClaim
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: db-pvc
-```
-
-[EXPLANATION: "Each section creates a different Kubernetes resource, but they're all related to our database component. This keeps related resources together in one file."]
-
-**YOU:** "For stateful applications like databases, Kubernetes has specific best practices to ensure data consistency and security:" [*gesture: pointing at key settings*]
-
-```yaml
-# Single replica to avoid data conflicts in stateful applications
-replicas: 1 # Only one replica for database to avoid data conflicts
-
-# Environment variables (in production, use Secrets instead)
-env:
-  - name: POSTGRES_PASSWORD
-    value: "postgres" # In production, use Kubernetes Secrets
-    
-# Internal-only access for security
-type: ClusterIP # Only accessible within the cluster for security
-```
-
-**YOU:** "For persistent storage - one of the most important aspects of databases - Kubernetes uses a sophisticated three-tier system, much more advanced than Docker Compose volumes:" [*gesture: three-tier motion*]
-
-```yaml
-# 1. PersistentVolumeClaim - requests storage
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: db-pvc # Name referenced by the volume in the deployment
+  name: frontend    # The name of this Deployment
 spec:
-  accessModes:
-    - ReadWriteOnce # Can be mounted as read-write by a single node
-  resources:
-    requests:
-      storage: 1Gi # Requesting 1 gigabyte of persistent storage
-
-# 2. Volume definition - references the claim
-volumes:
-  - name: db-data # Volume definition
-    persistentVolumeClaim:
-      claimName: db-pvc # Reference to the PVC defined above
-
-# 3. Volume mount - container access point
-volumeMounts:
-  - name: db-data # Mount point for persistent storage
-    mountPath: /var/lib/postgresql/data # PostgreSQL data directory
+  replicas: 1       # Run just one instance (Pod) of our frontend
+  selector:
+    matchLabels:
+      app: frontend # This Deployment manages Pods with the label "app: frontend"
 ```
 
-[ANALOGY: "Think of this as: (1) The PVC is like reserving storage space in our pantry, (2) The volume definition is like labeling a shelf with the reservation name, and (3) The volume mount is like telling the chef which shelf to use."]
+**YOU:** "The `spec` defines the desired state. We ask for `1 replica`. The `selector` is crucial – it links the Deployment to the Pods it manages using labels, in this case, `app: frontend`."
 
-**YOU:** "This separation creates a **storage lifecycle** independent from pods. The PVC requests storage, the pod references the claim, and containers mount the volume - much more sophisticated than Docker Compose volumes." [*gesture: lifecycle motion*]
-
-**YOU:** "The service discovery mechanism is also worth noting - this is how pods find each other:" [*gesture: connection motion*]
+**YOU:** "Inside the `spec`, we have a `template`. This is the blueprint for the Pods themselves:"
 
 ```yaml
-# In Service definition
+# frontend.yml (Deployment Part 2 - Pod Template)
+  template:
+    metadata:
+      labels:
+        app: frontend # Pods created will have this label
+    spec:
+      containers:
+        - name: frontend # Name of the container inside the Pod
+          image: docker-k8s-todo-frontend:latest # Our frontend image
+          imagePullPolicy: Never # For Minikube: use local image, don't pull
+          ports:
+            - containerPort: 3000 # The frontend app listens on port 3000
+```
+
+**YOU:** "We give the Pod the `app: frontend` label so the Deployment's selector can find it. We specify the container `image` (using `:latest` and `imagePullPolicy: Never` because we built it locally for Minikube) and the `containerPort` it exposes."
+
+**YOU:** "But how do we access this frontend? We need a `Service`. Notice the `---` separator – this allows multiple Kubernetes objects in one file."
+
+[*VISUAL: Scroll down in `frontend.yml` to show the Service*]
+
+```yaml
+# frontend.yml (Service Part)
+--- 
+apiVersion: v1       # API version for Services
+kind: Service        # We're creating a Service object
 metadata:
-  name: db-service # Name that other services will use to connect
+  name: frontend-service
 spec:
   selector:
-    app: db # Routes traffic to pods with label app=db
+    app: frontend  # Directs traffic to Pods with label "app: frontend"
+  ports:
+    - port: 3000       # Expose port 3000 externally
+      targetPort: 3000 # Route to containerPort 3000 on the Pods
+  type: LoadBalancer # Make this Service accessible from outside the cluster
+                     # (Requires 'minikube tunnel' for local access)
 ```
 
-**YOU:** "Backend pods can now connect to the database using `db-service` as the hostname in their environment variables - Kubernetes handles all service discovery automatically. It's like having a receptionist who always knows where to direct calls, even if employees change desks." [*gesture: networking motion*]
+**YOU:** "A `Service` provides stable networking. The `selector` again uses `app: frontend` to find the right Pods. We map the external `port` (3000) to the Pod's `targetPort` (3000). The `type: LoadBalancer` requests external access, which `minikube tunnel` helps us achieve locally."
 
-[KNOWLEDGE CHECK: "So far we've seen how Kubernetes separates concerns into different resource types and uses labels to connect them. This makes the system much more flexible than Docker Compose."]
+[*VISUAL: Briefly show `backend.yml`*]
 
-**YOU:** "For a deeper understanding of these resources, the Kubernetes documentation at kubernetes.io offers excellent guides on each concept. I highly recommend exploring it when you're ready to learn more." [*gesture: recommendation motion*]
+**YOU:** "The `backend.yml` file looks very similar – a Deployment and a Service. The key difference is in the Deployment's container spec:"
+
+```yaml
+# backend.yml (Key Difference: Environment Variables)
+# ... inside containers: section ...
+          env:
+            - name: DB_HOST
+              value: "db-service" # <--- Connects to the Database Service!
+            - name: DB_PORT
+              value: "5432"
+            # ... other DB credentials ...
+```
+
+**YOU:** "It uses environment variables (`env`) to configure the database connection. Crucially, `DB_HOST` is set to `db-service`. That's the name of the *Service* we'll define for our database. Kubernetes handles the service discovery automatically!"
+
+[*VISUAL: Show `database.yml`*]
+
+**YOU:** "Finally, `database.yml`. This one's a bit different because databases need persistent storage and are typically accessed internally."
+
+```yaml
+# database.yml (Resource Overview)
+# Deployment for the DB Pod
+apiVersion: apps/v1
+kind: Deployment
+# ... Deployment spec ...
+---
+# Service for internal access
+apiVersion: v1
+kind: Service
+# ... Service spec ...
+---
+# PersistentVolumeClaim for storage
+apiVersion: v1
+kind: PersistentVolumeClaim
+# ... PVC spec ...
+```
+
+**YOU:** "It defines three things: a `Deployment`, a `Service`, and a `PersistentVolumeClaim` or PVC. Let's look at the key parts."
+
+**YOU:** "In the **Deployment**, we use `replicas: 1` because typically you only want one writer for a database. It also takes environment variables for setup. Most importantly, it defines how to use storage:"
+
+```yaml
+# database.yml (Deployment - Volume Mount)
+# ... inside containers: section ...
+          volumeMounts:
+            - name: db-data
+              mountPath: /var/lib/postgresql/data # Where DB stores data
+      volumes:
+        - name: db-data
+          persistentVolumeClaim:
+            claimName: db-pvc # Links to the PVC named 'db-pvc' below
+```
+
+**YOU:** "The `volumeMounts` tells the container where to access the storage (`/var/lib/postgresql/data`). The `volumes` section links the logical volume name `db-data` to a `persistentVolumeClaim` named `db-pvc`."
+
+**YOU:** "The **Service** is simple:"
+
+```yaml
+# database.yml (Service)
+spec:
+  selector:
+    app: db
+  ports:
+    - port: 5432
+      targetPort: 5432
+  type: ClusterIP # <--- Only accessible *inside* the cluster
+```
+
+**YOU:** "Its `type` is `ClusterIP`, the default. This means only other Pods inside the Kubernetes cluster (like our backend) can reach it via the name `db-service`. It's not exposed externally."
+
+**YOU:** "And the **PersistentVolumeClaim** is the request for storage:"
+
+```yaml
+# database.yml (PersistentVolumeClaim)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: db-pvc # Name used in the Deployment's volume section
+spec:
+  accessModes:
+    - ReadWriteOnce # Can be mounted by one node at a time
+  resources:
+    requests:
+      storage: 1Gi # Request 1 Gibibyte of storage
+```
+
+**YOU:** "The PVC requests `1Gi` of storage that supports `ReadWriteOnce` access. Kubernetes (or the underlying storage system configured in Minikube) will fulfill this request, creating storage that exists independently of the database Pod itself."
+
+**YOU:** "So, that's a quick tour! We use structured YAML manifests to define Deployments (how to run), Services (how to connect), and PersistentVolumeClaims (how to store data). Labels and Selectors tie everything together. Much more structured than Docker Compose, enabling powerful scaling and management features."
 
 ---
 
