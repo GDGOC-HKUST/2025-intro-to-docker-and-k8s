@@ -269,191 +269,153 @@ Let's set up these components to monitor our database!" [*gesture: transition mo
 
 ### [SCENE 3: Setting Up PostgreSQL] - 1 minute
 [*TRANSITION: Smooth pan to editor window*]
-
 [*VISUAL: Editor showing postgres.yml with syntax highlighting*]
 
-[**PRESENTER NOTE**: Explain how this database deployment differs from previous parts]
+[**PRESENTER NOTE**: Assume familiarity with Deployment, Service, PVC from Part 3. Focus on *why* we need these for this specific component.]
 
-**YOU:** "First, let's examine our PostgreSQL deployment. This is a simplified version focused on monitoring rather than application support." [*gesture: pointing to file*]
+**YOU:** "First, let's set up our PostgreSQL database. This deployment is similar to the database we used in Part 3, but focused just on providing a target for monitoring." [*gesture: familiar setup*]
 
 *[**SHOW** postgres.yml]*
 
-**YOU:** "This YAML file defines three Kubernetes resources:" [*gesture: counting*]
+**YOU:** "Like before, we define a **Deployment** to run the PostgreSQL container, a **PersistentVolumeClaim** (PVC) for data storage (remember from Part 3 how this keeps data safe?), and a **Service** for internal networking." [*gesture: recalling components*]
+
+**YOU:** "The key difference here is the Service type and name:"
 
 ```yaml
-# 1. Deployment - The PostgreSQL database server
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: postgres
-spec:
-  replicas: 1
-  # ...
-
-# 2. Service - For internal communication
+# postgres.yml (Service Snippet)
 apiVersion: v1
 kind: Service
 metadata:
-  name: postgres-service
+  name: postgres-service # Important: Exporter will use this name
 spec:
-  type: ClusterIP
-  # ...
-
-# 3. PersistentVolumeClaim - For data persistence
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: postgres-pvc
-spec:
-  accessModes:
-    - ReadWriteOnce
-  # ...
+  ports:
+  - port: 5432
+    targetPort: 5432
+  selector:
+    app: postgres
+  type: ClusterIP      # Recall from Part 3: Only accessible *inside* the cluster
 ```
 
-**YOU:** "Note that we're using a **ClusterIP** service type, which means the database is only accessible from inside the cluster - a security best practice. 
+**YOU:** "We're using `type: ClusterIP`, making it accessible only *within* the cluster, which is good practice for databases. The name `postgres-service` is crucial because our metrics exporter will use this name to connect to the database." [*gesture: pointing to name*]
 
-We're also using a persistent volume claim for data storage, ensuring our data survives pod restarts." [*gesture: security and persistence motions*]
-
-[**KNOWLEDGE CHECK**: "Our database is now defined, but how will we collect metrics from it? That's where the exporter comes in."]
+[**KNOWLEDGE CHECK**: "We have our database running internally. How do we get metrics *out*?"]
 
 ---
 
 ### [SCENE 4: PostgreSQL Exporter] - 1-2 minutes
 [*TRANSITION: Slide to next file*]
-
 [*VISUAL: Editor showing postgres-exporter.yml*]
 
-[**PRESENTER NOTE**: Explain the concept of exporters in the Prometheus ecosystem]
+[**PRESENTER NOTE**: Explain the specific role of this exporter and its configuration.]
 
-**YOU:** "Now we need a way to extract metrics from PostgreSQL and expose them in a format Prometheus can understand. For this, we use the **PostgreSQL Exporter**." [*gesture: extracting motion*]
+**YOU:** "To get metrics from PostgreSQL into Prometheus, we need a translator – that's the **PostgreSQL Exporter**. It queries PostgreSQL for metrics and exposes them in a format Prometheus understands." [*gesture: translating motion*]
 
 *[**SHOW** postgres-exporter.yml]*
 
-**YOU:** "Let's examine this exporter configuration:" [*gesture: examining motion*]
+**YOU:** "This requires its own **Deployment** to run the exporter container and a **Service** so Prometheus can find and 'scrape' it."
+
+**YOU:** "The most critical part of the Deployment configuration is telling the exporter how to find our database:"
 
 ```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: postgres-exporter
-spec:
-  # ...
-  template:
-    # ...
-    spec:
-      containers:
-        - name: postgres-exporter
-          image: quay.io/prometheuscommunity/postgres-exporter:latest
-          # ...
+# postgres-exporter.yml (Deployment Env Snippet)
+# ... inside containers: section ...
           env:
             - name: DATA_SOURCE_NAME
+              # Tells exporter how to connect to the DB:
+              # Format: postgresql://<user>:<password>@<host>:<port>/<database>?sslmode=disable
               value: "postgresql://postgres:postgres@postgres-service:5432/postgres?sslmode=disable"
+              #                                       ^ Uses the DB Service name!
 ```
 
-**YOU:** "The key part is the **DATA_SOURCE_NAME** environment variable. This tells the exporter how to connect to our PostgreSQL database. 
+**YOU:** "See how `DATA_SOURCE_NAME` uses the **Service name** `postgres-service` we just defined? That's Kubernetes service discovery linking our exporter to the database!" [*gesture: connection motion*]
 
-Notice how it uses the service name `postgres-service` that we defined earlier - this is Kubernetes service discovery in action!" [*gesture: connection motion*]
-
-**YOU:** "The exporter automatically collects hundreds of metrics from PostgreSQL, such as:
-- Connection counts
-- Transaction rates
-- Query performance
-- Buffer usage
-- And much more
-
-These metrics help us understand the health and performance of our database." [*gesture: metrics listing*]
-
-**YOU:** "The exporter also needs its own service so Prometheus can find it:" [*gesture: pointing*]
+**YOU:** "Now, we define the **Service** for the exporter itself, so Prometheus knows where to find *it*:"
 
 ```yaml
+# postgres-exporter.yml (Service Snippet)
 apiVersion: v1
 kind: Service
 metadata:
-  name: postgres-exporter-service
+  name: postgres-exporter-service # Prometheus will target this name
 spec:
-  type: ClusterIP
   selector:
     app: postgres-exporter
   ports:
-    - port: 9187
-      targetPort: 9187
+    - port: 9187          # Standard port for postgres-exporter
+      targetPort: 9187    # Port the exporter container listens on
+  type: ClusterIP         # Prometheus runs inside the cluster
 ```
 
-**YOU:** "This service exposes the exporter on port 9187, which is the standard port for the PostgreSQL exporter. 
+**YOU:** "Prometheus will connect to `postgres-exporter-service` on port `9187` to scrape the metrics. We use ClusterIP because Prometheus also runs inside the cluster." [*gesture: endpoint motion*]
 
-Now Prometheus will be able to scrape metrics from this endpoint." [*gesture: endpoint motion*]
-
-[**ENGAGEMENT QUESTION**: "Can you think of other databases or systems that might need specialized exporters?"]
+[**ENGAGEMENT QUESTION**: "Exporters are common in Prometheus. What other services might have dedicated exporters? (e.g., Redis, Kafka, web servers)"]
 
 ---
 
 ### [SCENE 5: Prometheus Configuration] - 2 minutes
 [*TRANSITION: Slide to next file*]
-
 [*VISUAL: Editor showing prometheus.yml*]
 
-[**PRESENTER NOTE**: Emphasize Prometheus' pull-based model and configuration approach]
+[**PRESENTER NOTE**: Assume K8s object familiarity. Focus on Prometheus config via ConfigMap.]
 
-**YOU:** "Now let's set up **Prometheus**, the backbone of our monitoring stack. 
-
-Prometheus works by 'scraping' metrics from exporters at regular intervals." [*gesture: periodic scraping motion*]
+**YOU:** "Next: **Prometheus**, the core of our stack. It pulls (or 'scrapes') metrics from targets like our exporter and stores them as time-series data." [*gesture: core component + scraping motion*]
 
 *[**SHOW** prometheus.yml]*
 
-**YOU:** "Our Prometheus configuration has four main parts:" [*gesture: counting motion*]
+**YOU:** "To run Prometheus in Kubernetes, we need:" [*gesture: listing K8s objects*]
+"- A **Deployment** to run the Prometheus server container.
+- A **PVC** to store the collected metrics persistently (like in Part 3).
+- A **Service** to access the Prometheus web UI.
+- A **ConfigMap** to provide Prometheus' *own* configuration."
+
+**YOU:** "Let's look at the Service and the ConfigMap."
 
 ```yaml
-# 1. Deployment - The Prometheus server
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: prometheus
-# ...
-
-# 2. Service - For accessing the Prometheus UI
+# prometheus.yml (Service Snippet)
 apiVersion: v1
 kind: Service
 metadata:
-  name: prometheus-service
+  name: prometheus-service # Grafana will use this name
 spec:
-  type: LoadBalancer
-# ...
+  selector:
+    app: prometheus
+  ports:
+    - port: 9090
+      targetPort: 9090
+  type: LoadBalancer     # Recall Part 3: Makes UI accessible externally
+                         # (Needs 'minikube tunnel')
+```
 
-# 3. PersistentVolumeClaim - For storing metrics
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: prometheus-pvc
-# ...
+**YOU:** "We use `type: LoadBalancer` here, just like our frontend/backend in Part 3, so we can access the Prometheus web UI externally via `minikube tunnel`." [*gesture: external access motion*]
 
-# 4. ConfigMap - For Prometheus configuration
+**YOU:** "The **ConfigMap** tells Prometheus *what* to monitor:"
+
+```yaml
+# prometheus.yml (ConfigMap Snippet - Scrape Config)
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: prometheus-config
 data:
   prometheus.yml: |
+    global:
+      scrape_interval: 15s # How often to scrape targets
+
     scrape_configs:
-      - job_name: postgres
+      - job_name: 'prometheus' # Job to scrape Prometheus itself
         static_configs:
+          - targets: ['localhost:9090']
+
+      - job_name: 'postgres' # Job for our database exporter
+        static_configs:
+          # Tells Prometheus where the exporter Service is:
           - targets: ["postgres-exporter-service:9187"]
+          #             ^ Uses the exporter Service name and port!
 ```
 
-**YOU:** "Let's focus on two crucial aspects:" [*gesture: focusing motion*]
+**YOU:** "Inside the `scrape_configs`, we define a `job_name` called 'postgres'. The `targets` list tells Prometheus to connect to our exporter using its Service name, `postgres-exporter-service`, on port `9187`. Prometheus will now automatically find and scrape metrics from our exporter!" [*gesture: configuration + success motion*]
 
-**YOU:** "First, notice that the service type is **LoadBalancer**. This allows us to access the Prometheus web interface from outside the cluster, which is essential for monitoring. 
-
-In a production environment, you might use an Ingress instead." [*gesture: external access motion*]
-
-**YOU:** "Second, the **ConfigMap** contains the actual Prometheus configuration. The most important part is the `scrape_configs` section, which tells Prometheus what to monitor. 
-
-Here, we're configuring Prometheus to scrape metrics from our PostgreSQL exporter at the address `postgres-exporter-service:9187`." [*gesture: configuration motion*]
-
-**YOU:** "Prometheus will automatically discover this service within Kubernetes and start collecting metrics every 15 seconds by default. 
-
-The metrics are stored in a time-series database on the persistent volume we defined." [*gesture: storage motion*]
-
-[**KNOWLEDGE CHECK**: "Now Prometheus is configured to collect metrics, but we need a way to visualize them. That's where Grafana comes in."]
+[**KNOWLEDGE CHECK**: "Prometheus is set to collect data. How do we make sense of it? Grafana!"]
 
 ---
 
@@ -461,112 +423,83 @@ The metrics are stored in a time-series database on the persistent volume we def
 [*TRANSITION: Slide to next file*]
 [*VISUAL: Editor showing grafana.yml and a glimpse of grafana-configmap.yml*]
 
-[**PRESENTER NOTE**: Explain Grafana's role in the monitoring ecosystem and how it integrates with Prometheus]
+[**PRESENTER NOTE**: Focus on Grafana's role and config provisioning via ConfigMaps.]
 
-**YOU:** "Next up is **Grafana**, the visualization layer of our monitoring stack. 
-
-Grafana creates beautiful dashboards from our Prometheus metrics." [*gesture: visualization motion*]
+**YOU:** "Finally, **Grafana**! This takes the raw time-series data from Prometheus and turns it into beautiful, insightful dashboards." [*gesture: visualization motion*]
 
 *[**SHOW** grafana.yml]*
 
-**YOU:** "Like Prometheus, our Grafana setup consists of several parts:" [*gesture: listing motion*]
+**YOU:** "Grafana also needs standard Kubernetes resources:" [*gesture: listing K8s objects*]
+"- A **Deployment** to run the Grafana server.
+- A **PVC** to store its configuration and custom dashboards persistently.
+- A **Service** to access the Grafana web UI.
+- And crucially, **ConfigMaps** to automatically provision datasources and dashboards."
+
+**YOU:** "The Service is again `type: LoadBalancer` for external access:"
 
 ```yaml
-# 1. Deployment with multiple volume mounts
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: grafana
-spec:
-  # ...
-  template:
-    # ...
-    spec:
-      containers:
-        - name: grafana
-          # ...
-          volumeMounts:
-            - name: grafana-storage
-              mountPath: /var/lib/grafana
-            - name: grafana-datasources
-              mountPath: /etc/grafana/provisioning/datasources
-            - name: grafana-dashboards-config
-              mountPath: /etc/grafana/provisioning/dashboards
-            - name: grafana-dashboards-storage
-              mountPath: /var/lib/grafana/dashboards
-
-# 2. Service - For accessing the Grafana UI
+# grafana.yml (Service Snippet)
 apiVersion: v1
 kind: Service
 metadata:
   name: grafana-service
 spec:
-  type: LoadBalancer
-  # ...
-
-# 3. PersistentVolumeClaim - For storing dashboards and settings
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: grafana-pvc
-  # ...
+  selector:
+    app: grafana
+  ports:
+    - port: 3000
+      targetPort: 3000
+  type: LoadBalancer # Recall Part 3: External access via 'minikube tunnel'
 ```
 
-**YOU:** "Notice the multiple **volumeMounts** in the Grafana container. 
-
-These mount our ConfigMaps containing pre-configured dashboards and data sources." [*gesture: mounting motion*]
-
-*[**SHOW** a glimpse of grafana-configmap.yml]*
-
-**YOU:** "We're using ConfigMaps to provision Grafana automatically. This is a powerful feature that allows us to define dashboards as code - a DevOps best practice. 
-
-Our ConfigMaps include:" [*gesture: code-based configuration*]
+**YOU:** "The power lies in using ConfigMaps for automatic setup. The Deployment mounts these ConfigMaps as volumes:"
 
 ```yaml
-# 1. Data Source Configuration - Connecting to Prometheus
+# grafana.yml (Deployment Snippet - Volume Mounts)
+# ... inside containers: section ...
+          volumeMounts:
+            - name: grafana-storage # For Grafana's internal state
+              mountPath: /var/lib/grafana
+            # These mount ConfigMaps for provisioning:
+            - name: grafana-datasources        # Mounts the datasource config
+              mountPath: /etc/grafana/provisioning/datasources
+              readOnly: true
+            - name: grafana-dashboards-config # Mounts the dashboard provider config
+              mountPath: /etc/grafana/provisioning/dashboards
+              readOnly: true
+            - name: grafana-dashboards-storage # Mounts the actual dashboard JSON
+              mountPath: /var/lib/grafana/dashboards/postgres
+              readOnly: true
+# ... below, volumes: section links names (e.g., grafana-datasources) to ConfigMaps ...
+```
+
+**YOU:** "Let's glance at the key ConfigMap that connects Grafana to Prometheus:"
+
+*[**SHOW** a glimpse of grafana-configmap.yml - Datasource part]*
+
+```yaml
+# grafana-configmap.yml (Datasource ConfigMap Snippet)
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: grafana-datasources
 data:
-  dashboard.yml: |
+  datasources.yml: |  # Renamed key for clarity
     apiVersion: 1
     datasources:
-      - name: Prometheus
-        type: prometheus
-        access: proxy
-        url: http://prometheus-service:9090
-        isDefault: true
-        editable: true
-
-# 2. Dashboard Provider Configuration
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: grafana-dashboards-config
-  # ...
-
-# 3. Pre-configured PostgreSQL Dashboard
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: grafana-dashboards-storage
-  # ...
+    - name: Prometheus     # Name shown in Grafana UI
+      type: prometheus     # Type of datasource
+      access: proxy        # How Grafana connects
+      # URL points to Prometheus Service within Kubernetes:
+      url: http://prometheus-service:9090
+      #         ^ Uses the Prometheus Service name!
+      isDefault: true      # Make this the default datasource
+      editable: true
 ```
 
-**YOU:** "The **grafana-datasources** ConfigMap automatically connects Grafana to our Prometheus server. 
+**YOU:** "This tells Grafana where to find Prometheus, using its Kubernetes **Service name** `prometheus-service`. We also have another large ConfigMap (`grafana-dashboards-storage`) containing the JSON definition for a pre-built PostgreSQL dashboard. Grafana reads these on startup - no manual config needed!" [*gesture: automatic setup*]
 
-Notice how it uses the Kubernetes service name `prometheus-service`." [*gesture: connection motion*]
-
-**YOU:** "The **grafana-dashboards-storage** ConfigMap contains a pre-built dashboard for PostgreSQL metrics. 
-
-This JSON definition is quite large, so we won't examine it in detail, but it includes panels for connections, transactions, query statistics, and more." [*gesture: dashboard components*]
-
-**YOU:** "With this setup, Grafana will automatically be configured with a Prometheus data source and a PostgreSQL dashboard when it starts. 
-
-No manual setup required!" [*gesture: automatic configuration*]
-
-[**ENGAGEMENT QUESTION**: "What other systems might you want to create dashboards for in your applications?"]
+[**ENGAGEMENT QUESTION**: "What's the benefit of defining dashboards and datasources 'as code' in ConfigMaps? (Hint: Version control, consistency)"]
 
 ---
 
@@ -574,130 +507,88 @@ No manual setup required!" [*gesture: automatic configuration*]
 [*TRANSITION: Pan to terminal window*]
 [*VISUAL: Clean terminal with command prompt*]
 
-[**PRESENTER NOTE**: Show the deployment process and explain what's happening behind the scenes]
+[**PRESENTER NOTE**: Keep deployment steps concise, assuming familiarity from Part 3.]
 
-**YOU:** "Now that we understand all the components, let's deploy our monitoring stack to Kubernetes!" [*gesture: deployment motion*]
+**YOU:** "With all manifests ready, let's deploy the entire stack!" [*gesture: deployment motion*]
 
 *[**RUN COMMAND**]*
-```
+```bash
 kubectl apply -f .
 ```
 
-**YOU:** "This command applies all the YAML files in our directory, creating the PostgreSQL database, exporter, Prometheus, and Grafana resources. 
-
-Let's check that everything is running:" [*gesture: checking motion*]
+**YOU:** "Just like in Part 3, `kubectl apply -f .` creates or updates all the resources defined in our YAML files. Let's quickly check the pods:" [*gesture: checking motion*]
 
 *[**RUN COMMAND**]*
+```bash
+kubectl get pods -w # Use -w to watch status changes
 ```
-kubectl get pods
-```
+*(Wait for all pods: postgres, postgres-exporter, prometheus, grafana to be Running)*
+**(Press Ctrl+C to stop watching)**
 
-**YOU:** "Let's check our services to see how we can access Prometheus and Grafana:" [*gesture: services check*]
-
-*[**RUN COMMAND**]*
-```
-kubectl get services
-```
-
-**YOU:** "Notice that both the Prometheus and Grafana services are of type **LoadBalancer**. 
-
-To access them locally with Minikube, we need to create a tunnel:" [*gesture: tunneling motion*]
+**YOU:** "Looks good! Now, remember from Part 3, our Prometheus and Grafana Services use `type: LoadBalancer`. To access them locally via Minikube, we need:" [*gesture: recalling tunnel*]
 
 *[**RUN COMMAND** in a new terminal window]*
-```
+```bash
 minikube tunnel
 ```
+*(Enter password if prompted)*
 
-**YOU:** "This command creates a network route so we can access our LoadBalancer services. 
-
-Let's check the services again to see their external IPs:" [*gesture: IP check*]
+**YOU:** "With the tunnel running, let's get the service IPs:" [*gesture: IP check*]
 
 *[**RUN COMMAND**]*
-```
+```bash
 kubectl get services
 ```
 
-**YOU:** "Now we should see external IPs for our services. 
-
-Let's explore Prometheus and Grafana to see our monitoring in action!" [*gesture: transition to exploration*]
+**YOU:** "We should see EXTERNAL-IP addresses listed for `prometheus-service` (port 9090) and `grafana-service` (port 3000). Let's explore!" [*gesture: transition to exploration*]
 
 ---
 
 ### [SCENE 8: Exploring Prometheus] - 1-2 minutes
 [*TRANSITION: Smooth pan to browser window*]
-[*VISUAL: Browser navigating to Prometheus UI*]
+[*VISUAL: Browser navigating to Prometheus UI (using EXTERNAL-IP or localhost:9090)*]
 
-[**PRESENTER NOTE**: Give a quick tour of the Prometheus interface, focusing on key features]
+[**PRESENTER NOTE**: Quick tour focusing on scrape targets and one example query.]
 
-**YOU:** "Let's first access Prometheus at **http://localhost:9090**. 
+**YOU:** "Let's open Prometheus using its IP and port 9090. First, navigate to **Status > Targets**." [*gesture: presenting UI*]
 
-This is the Prometheus web interface, which allows us to query metrics and check the status of our monitoring targets." [*gesture: presenting UI*]
+*[**NAVIGATE** to Status > Targets]*
 
-*[**NAVIGATE** to Status > Targets in the Prometheus UI]*
+**YOU:** "Excellent! We see our 'postgres' job, and the state is **UP**. This confirms Prometheus is successfully scraping metrics from our exporter." [*gesture: checking status*]
 
-**YOU:** "Here in the **Targets** page, we can see that Prometheus is successfully scraping metrics from our PostgreSQL exporter. 
+*[**NAVIGATE** to Graph]*
 
-The state should show '**UP**', indicating that Prometheus can connect to the exporter and collect metrics." [*gesture: checking status*]
+**YOU:** "Now let's run a quick PromQL query. Try `pg_stat_activity_count` to see active database connections." [*gesture: typing query*]
 
-*[**NAVIGATE** to Graph in the Prometheus UI]*
+*[**TYPE** query and Execute]*
 
-**YOU:** "The **Graph** page allows us to query metrics using PromQL - the Prometheus Query Language. 
+**YOU:** "We get a graph showing the connection count over time. Prometheus holds all the raw data, but Grafana makes it easier to visualize." [*gesture: showing results*]
 
-Let's try a simple query to see how many connections our PostgreSQL database has:" [*gesture: typing query*]
-
-*[**TYPE** in the query box: pg_stat_activity_count]*
-
-**YOU:** "When we execute this query, we can see the number of active connections to our PostgreSQL database over time. 
-
-This is just one of hundreds of metrics available from the PostgreSQL exporter." [*gesture: showing results*]
-
-**YOU:** "Prometheus is powerful for ad-hoc queries, but for regular monitoring, we typically use Grafana dashboards. 
-
-Let's check those out next." [*gesture: transition motion*]
-
-[**KNOWLEDGE CHECK**: "Prometheus gives us the ability to query raw metrics, but Grafana will provide a more user-friendly visualization of those metrics."]
+[**KNOWLEDGE CHECK**: "Prometheus confirms data collection. Now for visualization."]
 
 ---
 
 ### [SCENE 9: Exploring Grafana Dashboards] - 1-2 minutes
 [*TRANSITION: Switch to Grafana tab in browser*]
-[*VISUAL: Browser navigating to Grafana login page*]
+[*VISUAL: Browser navigating to Grafana UI (using EXTERNAL-IP or localhost:3000)*]
 
-[**PRESENTER NOTE**: Show the power of pre-configured dashboards and how they visualize the metrics]
+[**PRESENTER NOTE**: Focus on the pre-configured dashboard.]
 
-**YOU:** "Now let's access Grafana at **http://localhost:3000**. 
+**YOU:** "Now, navigate to Grafana using its IP and port 3000. Login with **admin/admin** (you can skip the password change for the demo)." [*gesture: login motion*]
 
-The default login credentials are **admin/admin**. When you first log in, you'll be prompted to change the password, but for this demo, we can skip that." [*gesture: login motion*]
+*[**LOGIN** and navigate to Dashboards > Browse]*
 
-*[**LOGIN** to Grafana and navigate to Dashboards]*
+**YOU:** "Because we used ConfigMaps for provisioning, our Prometheus datasource is already configured, and we have a 'PostgreSQL Database' dashboard ready to go under the 'General' folder!" [*gesture: highlighting automation benefit*]
 
-**YOU:** "Thanks to our ConfigMap setup, Grafana already has a preconfigured dashboard for PostgreSQL. 
+*[**OPEN** the PostgreSQL dashboard]*
 
-Let's check it out!" [*gesture: navigation motion*]
+**YOU:** "Look at this! A rich dashboard visualizing key PostgreSQL metrics like connections, transactions, query performance, cache hit rates, and more - all powered by the data Prometheus is collecting from our exporter." [*gesture: presenting dashboard*]
 
-*[**NAVIGATE** to the PostgreSQL dashboard]*
+**YOU:** "This immediate visibility is crucial in production. You can instantly spot trends or anomalies. For example, watch the 'Transactions Per Second' panel - if that drops unexpectedly, you know to investigate." [*gesture: analytical motion*]
 
-**YOU:** "Here we can see a comprehensive dashboard with various metrics from our PostgreSQL database:" [*gesture: presenting dashboard*]
+**YOU:** "Explore the different panels. This level of insight helps optimize performance and ensure reliability." [*gesture: exploration encouragement*]
 
-**YOU:** "The dashboard includes panels for:
-- General database information like version and uptime
-- Connection statistics
-- Transaction rates and durations
-- Query statistics
-- Buffer usage and cache hit ratios
-- And much more!
-
-All of these metrics help us understand the performance and health of our database." [*gesture: pointing to different panels*]
-
-**YOU:** "These visualizations make it easy to spot trends, anomalies, and potential issues. 
-
-For example, a sudden increase in connection count might indicate a connection leak in your application, or high transaction durations might point to performance problems." [*gesture: analytical motion*]
-
-**YOU:** "In a production environment, you would also set up alerts based on these metrics. 
-
-For example, you might want to be notified if the database connection count exceeds 80% of the maximum allowed connections." [*gesture: alerting motion*]
-
-[**ENGAGEMENT QUESTION**: "What metrics would you consider most important to monitor for your database applications?"]
+[**ENGAGEMENT QUESTION**: "How could a dashboard like this help you troubleshoot a slow application?"]
 
 ---
 
@@ -705,29 +596,20 @@ For example, you might want to be notified if the database connection count exce
 [*TRANSITION: Camera view with GDG branding*]
 [*VISUAL: Monitoring dashboard with GDG HKUST elements*]
 
-[**PRESENTER NOTE**: Summarize the key learnings and emphasize the importance of observability]
+[**PRESENTER NOTE**: Concise wrap-up.]
 
-**YOU:** "And that's it! 🎉 We've successfully set up a complete monitoring stack for our Kubernetes application. 
+**YOU:** "And there we have it! 🎉 A full observability stack running in Kubernetes, monitoring our PostgreSQL database using Prometheus and Grafana." [*gesture: accomplished motion*]
 
-We now have real-time visibility into our PostgreSQL database's performance and health - a critical capability for production systems." [*gesture: accomplished motion*]
+**YOU:** "Today we saw how to:
+- **Deploy** specialized components like exporters.
+- **Configure** Prometheus to scrape targets using ConfigMaps.
+- **Provision** Grafana datasources and dashboards automatically." [*gesture: summarizing motion*]
 
-**YOU:** "We covered how to:
-- **Deploy** a PostgreSQL database in Kubernetes
-- **Use** an exporter to collect metrics
-- **Configure** Prometheus for metrics collection and storage
-- **Set up** Grafana for visualization with pre-configured dashboards" [*gesture: summarizing motion*]
+**YOU:** "Observability isn't just graphs; it's understanding your system's health and performance. This is essential for reliable, production-ready applications." [*gesture: importance motion*]
 
-**YOU:** "Remember, observability is a crucial aspect of modern cloud-native applications. 
+**YOU:** "Thanks for joining this **GDG HKUST** tutorial! Keep exploring, keep building!" [*gesture: friendly wave*]
 
-It helps you understand what's happening inside your systems, troubleshoot issues, and make data-driven decisions about scaling and optimization." [*gesture: importance motion*]
-
-**YOU:** "For more advanced monitoring, check out the Prometheus and Grafana documentation, and consider using Helm charts like the Kube Prometheus Stack mentioned in the README." [*gesture: further learning*]
-
-**YOU:** "Thank you for joining this **GDG HKUST** tutorial on Kubernetes observability! 👋 
-
-Stay tuned for more cloud-native content!" [*gesture: friendly wave*]
-
-[**FINAL KNOWLEDGE CHECK**: "Today we learned how to implement observability for Kubernetes applications, completing our journey from containerization with Docker to orchestration with Kubernetes to monitoring with Prometheus and Grafana."]
+[**FINAL KNOWLEDGE CHECK**: "We've built upon our Kubernetes deployment skills from Part 3 by adding a vital observability layer."]
 
 ## Motion Instructions and Timing
 
